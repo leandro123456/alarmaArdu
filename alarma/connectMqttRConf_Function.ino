@@ -16,6 +16,10 @@ boolean connectMqttRConf() {
         boolean result;
         mqttClientRConf.setWill(mqttStatusTopicValue, mqttLwtMessageValue, true, 0);
         result = mqttClientRConf.connect(mqttRCClientIDValue, remoteConfigMqttUserValue, remoteConfigMqttPwdValue);
+        Serial.println((String)"mqttClientID-Rconf: " + mqttRCClientIDValue);
+        Serial.println((String)"mqttUserNameValue-Rconf: " + remoteConfigMqttUserValue);
+        Serial.println((String)"mqttUserPasswordValue-Rconf: " + remoteConfigMqttPwdValue);
+        Serial.println("RESULTADO DE LA CONEXION-Rconf: " + (String)result);
         if (!result) {
           lastRConfMqttConnectionAttempt = aHora;
           return false;

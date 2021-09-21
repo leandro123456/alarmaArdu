@@ -372,7 +372,7 @@ void controlDSC(String coMMand, int targetPartition){
             
             // Arm stay
             if (coMMand == "arm_stay" && !dsc.armed[targetPartition-1] && !dsc.exitDelay[targetPartition-1]) {
-              while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
+             // while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
               dsc.writePartition = targetPartition;         // Sets writes to the partition number
               dsc.write('s');                             // Virtual keypad arm stay
             
@@ -384,7 +384,7 @@ void controlDSC(String coMMand, int targetPartition){
           
             // Arm away
             else if (coMMand == "arm_away" && !dsc.armed[targetPartition-1] && !dsc.exitDelay[targetPartition-1]) {
-              while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
+             // while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
               dsc.writePartition = targetPartition;         // Sets writes to the partition number
               dsc.write('w');                             // Virtual keypad arm away
 
@@ -396,7 +396,7 @@ void controlDSC(String coMMand, int targetPartition){
           
             // Disarm
             else if (coMMand == "disarm" && (dsc.armed[targetPartition-1] || dsc.exitDelay[targetPartition-1])) {
-              while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
+             // while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
               dsc.writePartition = targetPartition;         // Sets writes to the partition number
               dsc.write(accessCodeValue);
 

@@ -3,7 +3,7 @@
  * Interface para sistemas de alarma DSC Power Series
  *
  */
-
+ 
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 # include <ESP8266HTTPUpdateServer.h>
@@ -37,7 +37,7 @@ const char wifiInitialApPassword[] = "12345678"; // >>REPLACE_FOR_PERSO<<
 
 // Default Remote Management password and Coiaca MQTT broker pwd  
 String defRConfigPwdValue = "wDJGtmE6"; // >>REPLACE_FOR_PERSO<<
-String defRemoteConfigMqttPwdValue = "3XrTOdcc"; // >>REPLACE_FOR_PERSO<<
+String defRemoteConfigMqttPwdValue ="rZ25xbVN";  //dsc03 "3XrTOdcc"; // >>REPLACE_FOR_PERSO<<
 char* mqttRCClientIDValue = "DSC010000000002RM"; //Para diferenciar el clientID entre el de la func ppal y el e RC  >>REPLACE_FOR_PERSO<<
 ////// FIN CUSTOM DATA /////////////
 
@@ -159,9 +159,6 @@ const char CUSTOMHTML_BODY_INNER[] PROGMEM = "<div><img src='data:image/png;base
 
 // FIN Para customizar HTML
 
-IotWebConfParameterGroup group1 =  IotWebConfParameterGroup("group1", "");
-IotWebConfTextParameter deviceIDParam = IotWebConfTextParameter("Device ID12", "deviceId", deviceIdValue, STRING_LEN, char_deviceID, nullptr, char_deviceID);
-
 IotWebConfParameterGroup group2 =  IotWebConfParameterGroup("group2", "MQTT Config");
 IotWebConfTextParameter mqttServerParam = IotWebConfTextParameter("MQTT Server", "mqttServer", mqttServerValue, STRING_LEN, "mqtt.coiaca.com", nullptr, "mqtt.coiaca.com");
 IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port (unsecure)", "MQTTPort", mqttPortValue, NUMBER_LEN, "1883", "1..9999", "min='1' max='9999' step='1'");
@@ -169,7 +166,11 @@ IotWebConfTextParameter mqttUserNameParam = IotWebConfTextParameter("MQTT user",
 IotWebConfPasswordParameter mqttUserPasswordParam = IotWebConfPasswordParameter("MQTT password", "mqttPass", mqttUserPasswordValue, STRING_LEN, "mqttpwd", nullptr, "mqttpwd");
 IotWebConfTextParameter mqttClientIDParam = IotWebConfTextParameter("MQTT Client ID", "mqttClientID", mqttClientIDValue, STRING_LEN,"CoiacaDSC010000000002", nullptr, "CoiacaDSC010000000002");
 
-IotWebConfTextParameter accessCodeParam = IotWebConfTextParameter("Access Code", "accessCode", accessCodeValue, NUMBER_LEN, "password", nullptr, "password");
+IotWebConfParameterGroup group1 =  IotWebConfParameterGroup("group1", "Alarm Config");
+IotWebConfTextParameter deviceIDParam = IotWebConfTextParameter("Device ID12", "deviceId", deviceIdValue, STRING_LEN, char_deviceID, nullptr, char_deviceID);
+IotWebConfTextParameter accessCodeParam = IotWebConfTextParameter("Access Code", "accessCode", accessCodeValue, NUMBER_LEN,"1234", "1..9999", "min='0' max='9999' step='1'");
+
+
 IotWebConfTextParameter mqttStatusTopicParam = IotWebConfTextParameter("Status Topic", "mqttStatusTopic", mqttStatusTopicValue, STRING_LEN, "DSC010000000002/Status", nullptr,"DSC010000000002/Status");
 IotWebConfTextParameter mqttBirthMessageParam = IotWebConfTextParameter("Birth Message", "mqttBirthMessage", mqttBirthMessageValue, STRING_LEN, "online", nullptr, "online");
 IotWebConfTextParameter mqttLwtMessageParam = IotWebConfTextParameter("LWT Message", "mqttLwtMessage", mqttLwtMessageValue, STRING_LEN, "offline", nullptr, "offline");
@@ -183,55 +184,55 @@ IotWebConfTextParameter mqttCommandTopicParam = IotWebConfTextParameter("Command
 IotWebConfTextParameter mqttKeepAliveTopicParam = IotWebConfTextParameter("Keep Alive Topic", "mqttKeepAliveTopic", mqttKeepAliveTopicValue, STRING_LEN, "DSC010000000002/keepAlive", nullptr, "DSC010000000002/keepAlive");
 IotWebConfNumberParameter updateIntervalParam = IotWebConfNumberParameter("Keep Alive interval (seconds)", "updateInterval", updateIntervalValue, NUMBER_LEN, "30", "1..100", "min='1' max='100' step='1'");
 
-static char TIMERStatusVal[][STRING_LEN] = { "Disabled", "Enabled"};
+static char TIMERStatusVal[][STRING_LEN] ={ "0", "1"};
 static char TIMERStatusNam[][STRING_LEN] = { "Disabled", "Enabled"};
-static char PubTimerVal[][STRING_LEN] = { "No", "Yes"};
+static char PubTimerVal[][STRING_LEN] = { "0", "1"};
 static char PubTimerNam[][STRING_LEN] = { "No", "Yes"};
-static char timeDSTVal[][STRING_LEN] = { "No", "Yes"};
+static char timeDSTVal[][STRING_LEN] = { "0", "1"};
 static char timeDSTNam[][STRING_LEN] = { "No", "Yes"};
 static char mqttRetVal[][STRING_LEN] = { "0", "1"};
 static char mqttRetNam[][STRING_LEN] = { "0", "1"};
-static char mqttQoSParamVal[][STRING_LEN] = { "0", "1","2"};
+static char mqttQoSParamVal[][STRING_LEN] ={ "0", "1","2"};
 static char mqttQoSParamNam[][STRING_LEN] = { "0", "1","2"};
 IotWebConfParameterGroup group3 =  IotWebConfParameterGroup("group3", "Mqtt Advanced");
-IotWebConfSelectParameter tiMerStatusParam = IotWebConfSelectParameter("Timer", "tiMerStatus", tiMerStatusValue, NUMBER_LEN, (char*)TIMERStatusVal, (char*)TIMERStatusNam, 2, NUMBER_LEN);
+IotWebConfSelectParameter tiMerStatusParam = IotWebConfSelectParameter("Timer", "tiMerStatus", tiMerStatusValue, STRING_LEN, (char*)TIMERStatusVal, (char*)TIMERStatusNam, sizeof(TIMERStatusNam) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter tiMerStringParam = IotWebConfTextParameter("Timer String", "tiMerString", tiMerStringValue, STRING_LEN, "H20001AH23590A", nullptr, "H20001AH23590A");
-IotWebConfSelectParameter publishTimerStringParam = IotWebConfSelectParameter("Publish Timer String", "publishTimerString", publishTimerStringValue, NUMBER_LEN,(char*)PubTimerVal, (char*)PubTimerNam, sizeof(PubTimerVal), NUMBER_LEN);
+IotWebConfSelectParameter publishTimerStringParam = IotWebConfSelectParameter("Publish Timer String", "publishTimerString", publishTimerStringValue, STRING_LEN,(char*)PubTimerVal, (char*)PubTimerNam, sizeof(PubTimerVal) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter ntpServerParam = IotWebConfTextParameter("NTP server", "ntpServer", ntpServerValue, STRING_LEN, "pool.ntp.org", nullptr, "pool.ntp.org");
 IotWebConfNumberParameter timeZoneParam = IotWebConfNumberParameter("Time Zone", "timeZone", timeZoneValue, NUMBER_LEN, "-3", "-11..14", "min='-11' max='14' step='1'");
 IotWebConfNumberParameter ntpUpdateIntervalParam = IotWebConfNumberParameter("NTP Update interval (seconds)", "ntpUpdateInterval", ntpUpdateIntervalValue, NUMBER_LEN, "300", "1..500", "min='1' max='500' step='1'");
-IotWebConfSelectParameter timeDSTParam = IotWebConfSelectParameter("DST", "timeDST", timeDSTValue, NUMBER_LEN,(char*)timeDSTVal, (char*)timeDSTNam, sizeof(timeDSTVal) / NUMBER_LEN, NUMBER_LEN);
-IotWebConfSelectParameter mqttRetainParam = IotWebConfSelectParameter("MQTT Retain", "mqttRetain", mqttRetainValue, NUMBER_LEN, (char*)mqttRetVal, (char*)mqttRetNam,sizeof(mqttRetVal) / NUMBER_LEN, NUMBER_LEN);
-IotWebConfSelectParameter mqttQoSParam = IotWebConfSelectParameter("MQTT QoS", "mqttQoS", mqttQoSValue, NUMBER_LEN, (char*)mqttQoSParamVal, (char*)mqttQoSParamNam, sizeof(mqttQoSParamVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfSelectParameter timeDSTParam = IotWebConfSelectParameter("DST", "timeDST", timeDSTValue, STRING_LEN,(char*)timeDSTVal, (char*)timeDSTNam, sizeof(timeDSTVal) / STRING_LEN, STRING_LEN);
+IotWebConfSelectParameter mqttRetainParam = IotWebConfSelectParameter("MQTT Retain", "mqttRetain", mqttRetainValue, STRING_LEN, (char*)mqttRetVal, (char*)mqttRetNam,sizeof(mqttRetVal) / STRING_LEN, STRING_LEN);
+IotWebConfSelectParameter mqttQoSParam = IotWebConfSelectParameter("MQTT QoS", "mqttQoS", mqttQoSValue, STRING_LEN, (char*)mqttQoSParamVal, (char*)mqttQoSParamNam, sizeof(mqttQoSParamVal) / STRING_LEN, STRING_LEN);
 
-static char enableRConfigPVal[][STRING_LEN] = {0,1};
+static char enableRConfigPVal[][STRING_LEN] = { "0", "1"};
 static char enableRConfigPNam[][STRING_LEN] = {"No","Yes"};
-static char secureAllTrafficPVal[][STRING_LEN] = {0,1};
+static char secureAllTrafficPVal[][STRING_LEN] = { "0", "1"};
 static char secureAllTrafficPNam[][STRING_LEN] = { "No", "Yes"};
-static char enableMonitoringPVal[][STRING_LEN] = {0,1,2,3};
+static char enableMonitoringPVal[][STRING_LEN] = { "0", "1","2","3"};
 static char enableMonitoringPNam[][STRING_LEN] = {"Disabled","Triggered","Armed","All"};
-static char enableMqttDebugPVal[][STRING_LEN] = {0,1};
+static char enableMqttDebugPVal[][STRING_LEN] = { "0", "1"};
 static char enableMqttDebugPNam[][STRING_LEN] = { "No", "Yes"};
-static char remoteConfigRetainPVal[][STRING_LEN] = {0,1};
+static char remoteConfigRetainPVal[][STRING_LEN] = { "0", "1"};
 static char remoteConfigRetainPNam[][STRING_LEN] = { "0", "1"};
-static char remoteConfigQoSPVal[][STRING_LEN] = {0,1,2};
+static char remoteConfigQoSPVal[][STRING_LEN] = { "0", "1","2"};
 static char remoteConfigQoSPNam[][STRING_LEN] = { "0", "1","2"};
 IotWebConfParameterGroup group4 =  IotWebConfParameterGroup("group4", "Timer Config");
-IotWebConfSelectParameter enableRConfigParam = IotWebConfSelectParameter("Enable Remote Management", "enableRConfig", enableRConfigValue, NUMBER_LEN, (char*)enableRConfigPVal, (char*)enableRConfigPNam, sizeof(enableRConfigPVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfSelectParameter enableRConfigParam = IotWebConfSelectParameter("Enable Remote Management", "enableRConfig", enableRConfigValue, STRING_LEN, (char*)enableRConfigPVal, (char*)enableRConfigPNam, sizeof(enableRConfigPVal) / STRING_LEN, STRING_LEN);
 IotWebConfPasswordParameter RConfigPwdParam = IotWebConfPasswordParameter("Remote Management Password", "RConfigPwd", RConfigPwdValue, STRING_LEN, defRConfigPwdValue.c_str(), nullptr, defRConfigPwdValue.c_str());
 IotWebConfTextParameter remoteConfigMqttServerParam = IotWebConfTextParameter("Remote Management MQTT server", "remoteConfigMqttServer", remoteConfigMqttServerValue, STRING_LEN, "mqtt.coiaca.com", nullptr, "mqtt.coiaca.com");
 IotWebConfNumberParameter remoteConfigMqttPortParam = IotWebConfNumberParameter("Remote Management MQTT server port (TLS)", "remoteConfigMqttPort", remoteConfigMqttPortValue, NUMBER_LEN, "8883", "1..9999", "min='1' max='9999' step='1'");
 IotWebConfTextParameter remoteConfigMqttUserParam = IotWebConfTextParameter("Remote Management MQTT user", "remoteConfigMqttUser", remoteConfigMqttUserValue, STRING_LEN, "DSC010000000002", nullptr, "DSC010000000002");
-IotWebConfTextParameter remoteConfigMqttPwdParam = IotWebConfTextParameter("Remote Management MQTT password", "remoteConfigMqttPwd", remoteConfigMqttPwdValue, STRING_LEN, defRemoteConfigMqttPwdValue.c_str(), nullptr, defRemoteConfigMqttPwdValue.c_str()); 
-IotWebConfSelectParameter forceSecureAllTrafficParam = IotWebConfSelectParameter("Force all traffic through this secure connection", "forceSecureAllTraffic", forceSecureAllTrafficValue, NUMBER_LEN,(char*)secureAllTrafficPVal, (char*)secureAllTrafficPNam, sizeof(secureAllTrafficPVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfPasswordParameter remoteConfigMqttPwdParam = IotWebConfPasswordParameter("Remote Management MQTT password", "remoteConfigMqttPwd", remoteConfigMqttPwdValue, STRING_LEN, defRemoteConfigMqttPwdValue.c_str(), nullptr, defRemoteConfigMqttPwdValue.c_str()); 
+IotWebConfSelectParameter forceSecureAllTrafficParam = IotWebConfSelectParameter("Force all traffic through this secure connection", "forceSecureAllTraffic", forceSecureAllTrafficValue, STRING_LEN,(char*)secureAllTrafficPVal, (char*)secureAllTrafficPNam, sizeof(secureAllTrafficPVal) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter remoteConfigTopicParam = IotWebConfTextParameter("Remote Management Command Topic", "remoteConfigTopic", remoteConfigTopicValue, STRING_LEN, "RMgmt/DSC010000000002", nullptr, "RMgmt/DSC010000000002");
 IotWebConfTextParameter remoteConfigResultTopicParam = IotWebConfTextParameter("Remote Management Result Topic", "remoteConfigResultTopic", remoteConfigResultTopicValue, STRING_LEN, "RMgmt/DSC010000000002/results", nullptr, "RMgmt/DSC010000000002/results");
-IotWebConfSelectParameter enableMonitoringParam = IotWebConfSelectParameter("Enable Monitoring", "enableMonitoring", enableMonitoringValue, NUMBER_LEN, (char*)enableMonitoringPVal, (char*)enableMonitoringPNam, sizeof(enableMonitoringPVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfSelectParameter enableMonitoringParam = IotWebConfSelectParameter("Enable Monitoring", "enableMonitoring", enableMonitoringValue, NUMBER_LEN, (char*)enableMonitoringPVal, (char*)enableMonitoringPNam, sizeof(enableMonitoringPVal) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter monitoringTopicParam = IotWebConfTextParameter("Monitoring Topic Prefix", "monitoringTopic", monitoringTopicValue, STRING_LEN, "MNTR/DSC010000000002", nullptr, "MNTR/DSC010000000002");
-IotWebConfSelectParameter enableMqttDebugParam = IotWebConfSelectParameter("Enable MQTT Debug", "enableMqttDebug", enableMqttDebugValue, NUMBER_LEN,(char*)enableMqttDebugPVal, (char*)enableMqttDebugPNam, sizeof(enableMqttDebugPVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfSelectParameter enableMqttDebugParam = IotWebConfSelectParameter("Enable MQTT Debug", "enableMqttDebug", enableMqttDebugValue, NUMBER_LEN,(char*)enableMqttDebugPVal, (char*)enableMqttDebugPNam, sizeof(enableMqttDebugPVal) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter MqttDebugTopicParam = IotWebConfTextParameter("MQTT Debug Topic", "MqttDebugTopic", MqttDebugTopicValue, STRING_LEN, "RMgmt/DSC010000000002/debug", nullptr, "RMgmt/DSC010000000002/debug");
-IotWebConfSelectParameter remoteConfigRetainParam = IotWebConfSelectParameter("Remote Management MQTT Retain", "remoteConfigRetain", remoteConfigRetainValue, NUMBER_LEN, (char*)remoteConfigRetainPVal, (char*)remoteConfigRetainPNam, sizeof(remoteConfigRetainPVal) / NUMBER_LEN, NUMBER_LEN);
-IotWebConfSelectParameter remoteConfigQoSParam = IotWebConfSelectParameter("Remote Management MQTT QoS", "remoteConfigQoS", remoteConfigQoSValue, NUMBER_LEN,  (char*)remoteConfigQoSPVal, (char*)remoteConfigQoSPNam, sizeof(remoteConfigQoSPVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfSelectParameter remoteConfigRetainParam = IotWebConfSelectParameter("Remote Management MQTT Retain", "remoteConfigRetain", remoteConfigRetainValue, STRING_LEN, (char*)remoteConfigRetainPVal, (char*)remoteConfigRetainPNam, sizeof(remoteConfigRetainPVal) / STRING_LEN, STRING_LEN);
+IotWebConfSelectParameter remoteConfigQoSParam = IotWebConfSelectParameter("Remote Management MQTT QoS", "remoteConfigQoS", remoteConfigQoSValue, STRING_LEN,  (char*)remoteConfigQoSPVal, (char*)remoteConfigQoSPNam, sizeof(remoteConfigQoSPVal) / STRING_LEN, STRING_LEN);
 IotWebConfParameterGroup group6 =  IotWebConfParameterGroup("group6", "Mqtt Remote Management");
 
 
@@ -258,17 +259,15 @@ pinMode(14, OUTPUT);
 
   Serial.println("Starting up...");
 
-
-  //group1.addItem(&deviceIDParam);
-  //iotWebConf.addParameterGroup(&group1);
-  
   group2.addItem(&mqttServerParam);
   group2.addItem(&mqttPortParam);
   group2.addItem(&mqttUserNameParam);
   group2.addItem(&mqttUserPasswordParam);
   group2.addItem(&mqttClientIDParam);
 
-  group3.addItem(&accessCodeParam);
+  group1.addItem(&accessCodeParam);
+  iotWebConf.addParameterGroup(&group1);
+
   group3.addItem(&mqttStatusTopicParam);
   group3.addItem(&mqttBirthMessageParam);
   group3.addItem(&mqttLwtMessageParam);
@@ -293,7 +292,7 @@ pinMode(14, OUTPUT);
   group4.addItem(&mqttQoSParam);
   
   group6.addItem(&enableRConfigParam);
-  group6.addItem(&RConfigPwdParam);
+  //group6.addItem(&RConfigPwdParam);
   group6.addItem(&remoteConfigMqttServerParam);
   group6.addItem(&remoteConfigMqttPortParam);
   group6.addItem(&remoteConfigMqttUserParam);
@@ -378,8 +377,8 @@ void loop() {
     mqttClient.loop();
     }
   if (atoi(enableRConfigValue) == 1 || atoi(forceSecureAllTrafficValue) == 1) {
-    Serial.println("Remote: enableRConfigValue es:"+ (String)enableRConfigValue);
-    Serial.println("Remote: forceSecureAllTrafficValue es:"+ (String)forceSecureAllTrafficValue);
+    //Serial.println("Remote: enableRConfigValue es:"+ (String)enableRConfigValue);
+   // Serial.println("Remote: forceSecureAllTrafficValue es:"+ (String)forceSecureAllTrafficValue);
     mqttClientRConf.loop();
     }
 

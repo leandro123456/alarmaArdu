@@ -111,11 +111,11 @@ boolean connectMqttOptions(){
     Serial.println("START OPTION to MQTT server...");
     boolean result;
     mqttClient.setWill(mqttStatusTopicValue, mqttLwtMessageValue, true, 0);
-   // if (mqttUserPasswordValue[0] != '\0')
-  //  {
-    //  result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue, mqttUserPasswordValue);
-      result = mqttClient.connect("CoiacaDSC010000000002", "mqttusr", "mqttpwd");
- /**   }
+    if (mqttUserPasswordValue[0] != '\0')
+    {
+      result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue, mqttUserPasswordValue);
+      //result = mqttClient.connect("CoiacaDSC010000000002", "mqttusr", "mqttpwd");
+   }
     else if (mqttUserNameValue[0] != '\0')
     {
       result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue);
@@ -124,8 +124,7 @@ boolean connectMqttOptions(){
     {
       result = mqttClient.connect(mqttClientIDValue);
     }
-**/
-   
+
     Serial.println((String)"mqttClientID: " + mqttClientIDValue);
     Serial.println((String)"mqttUserNameValue: " + mqttUserNameValue);
     Serial.println((String)"mqttUserPasswordValue: " + mqttUserPasswordValue);

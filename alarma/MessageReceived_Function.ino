@@ -27,7 +27,7 @@ Serial.println("entro en el IF");
  
             // Arm stay  REEMPLAZAR ESTO POR controlDSC("arm_stay",partitionN.toInt());
             if (acTion == "S" && !dsc.armed[partitionN.toInt()-1] && !dsc.exitDelay[partitionN.toInt()-1]) {
-              while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
+              //while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
               //dsc.writePartition = partitionN.toInt() + 1;         // Sets writes to the partition number
               dsc.writePartition = partitionN.toInt();         // Sets writes to the partition number
               dsc.write('s');                             // Virtual keypad arm stay
@@ -40,7 +40,7 @@ Serial.println("entro en el IF");
           
             // Arm away REEMPLAZAR ESTO POR controlDSC("arm_away",partitionN.toInt());
             else if (acTion == "A" && !dsc.armed[partitionN.toInt()-1] && !dsc.exitDelay[partitionN.toInt()-1]) {
-              while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
+              //while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
               //dsc.writePartition = partitionN.toInt() + 1;         // Sets writes to the partition number
               dsc.writePartition = partitionN.toInt();         // Sets writes to the partition number
               dsc.write('w');                             // Virtual keypad arm away
@@ -53,7 +53,7 @@ Serial.println("entro en el IF");
           
             // Disarm  REEMPLAZAR ESTO POR controlDSC("disarm",partitionN.toInt());
             else if (acTion == "D" && (dsc.armed[partitionN.toInt()-1] || dsc.exitDelay[partitionN.toInt()-1])) {
-              while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
+              //while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
               //dsc.writePartition = partitionN.toInt() + 1;         // Sets writes to the partition number
               dsc.writePartition = partitionN.toInt();         // Sets writes to the partition number
               dsc.write(accessCodeValue);

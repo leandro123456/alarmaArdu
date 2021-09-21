@@ -2,7 +2,7 @@
   IDE arduino-1.8.15
   
   
-# Version 0.7.0
+# Version 1.0.0
  * 1- mqtt.h  Joel Gahewiler  2.4.7  --> 2.5.0
 
  * 2- dscKeybusInterface.h   1.2.0 --> 2.0.0 
