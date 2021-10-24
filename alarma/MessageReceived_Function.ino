@@ -3,7 +3,7 @@ void mqttMessageReceived(String &topic, String &payload){
 Serial.println("########################  Message received: " + topic + " - " + payload);
 /* --------------- SerialDebug: --------- */
 /* --------------- mqttDebug: --------- */
-if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Message received: Topic: " + topic + " Payload: " + payload, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Message received: Topic: " + topic + " Payload: " + payload, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
 /* --------------- mqttDebug: --------- */
    
 // Actualiza con el ltimo estado publicado
@@ -20,7 +20,7 @@ Serial.println("acTion: " + acTion);
 
   if (partitionN >= "0" && partitionN <= "8" && (acTion == "S" || acTion == "A" || acTion == "D" ) ){
   /* --------------- mqttDebug: --------- */
-  //if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Inside IF - Decode: Partition: " + partitionN + " Action: " + acTion, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+  //if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Inside IF - Decode: Partition: " + partitionN + " Action: " + acTion, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
   /* --------------- mqttDebug: --------- */
   
 Serial.println("entro en el IF");
@@ -33,7 +33,7 @@ Serial.println("entro en el IF");
               dsc.write('s');                             // Virtual keypad arm stay
             
             /* --------------- mqttDebug: --------- */
-            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " ARM_STAY called", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " ARM_STAY called", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
             /* --------------- mqttDebug: --------- */
             
             }
@@ -46,7 +46,7 @@ Serial.println("entro en el IF");
               dsc.write('w');                             // Virtual keypad arm away
 
             /* --------------- mqttDebug: --------- */
-            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " ARM_AWAY called", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " ARM_AWAY called", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
             /* --------------- mqttDebug: --------- */
             
             }
@@ -59,7 +59,7 @@ Serial.println("entro en el IF");
               dsc.write(accessCodeValue);
 
             /* --------------- mqttDebug: --------- */
-            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Access code sent to DISARM", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Access code sent to DISARM", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
             /* --------------- mqttDebug: --------- */
             }
             
@@ -72,7 +72,7 @@ Serial.println("entro en el IF");
                   Serial.println("Pin2 in now HIGH");
                   /* --------------- SerialDebug: --------- */
                   /* --------------- mqttDebug: --------- */
-                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin2 in now HIGH.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin2 in now HIGH.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                   /* --------------- mqttDebug: --------- */
                 }
 
@@ -85,7 +85,7 @@ Serial.println("entro en el IF");
                   Serial.println("Pin2 was put to HIGH and now is LOW");
                   /* --------------- SerialDebug: --------- */
                   /* --------------- mqttDebug: --------- */
-                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin2 was put to HIGH and now is LOW.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin2 was put to HIGH and now is LOW.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                   /* --------------- mqttDebug: --------- */
                 }
                 
@@ -96,7 +96,7 @@ Serial.println("entro en el IF");
                   Serial.println("Pin2 in now LOW");
                   /* --------------- SerialDebug: --------- */
                   /* --------------- mqttDebug: --------- */
-                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin2 in now LOW.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin2 in now LOW.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                   /* --------------- mqttDebug: --------- */
                 }
 
@@ -109,7 +109,7 @@ Serial.println("entro en el IF");
                   Serial.println("Pin2 was put to LOW and now is HIGH");
                   /* --------------- SerialDebug: --------- */
                   /* --------------- mqttDebug: --------- */
-                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin2 was put to LOW and now is HIGH.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin2 was put to LOW and now is HIGH.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                   /* --------------- mqttDebug: --------- */
                 }
                 
@@ -120,7 +120,7 @@ Serial.println("entro en el IF");
                   Serial.println("Pin1 in now HIGH");
                   /* --------------- SerialDebug: --------- */
                   /* --------------- mqttDebug: --------- */
-                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin1 in now HIGH.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin1 in now HIGH.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                   /* --------------- mqttDebug: --------- */
                 }
 
@@ -133,7 +133,7 @@ Serial.println("entro en el IF");
                   Serial.println("Pin1 was put to HIGH and now is LOW");
                   /* --------------- SerialDebug: --------- */
                   /* --------------- mqttDebug: --------- */
-                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin1 was put to HIGH and now is LOW", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin1 was put to HIGH and now is LOW", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                   /* --------------- mqttDebug: --------- */
                 }
                 
@@ -144,7 +144,7 @@ Serial.println("entro en el IF");
                   Serial.println("Pin1 in now LOW");
                   /* --------------- SerialDebug: --------- */
                   /* --------------- mqttDebug: --------- */
-                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin1 in now LOW.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin1 in now LOW.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                   /* --------------- mqttDebug: --------- */
                 }
 
@@ -157,7 +157,7 @@ Serial.println("entro en el IF");
                   Serial.println("Pin1 was put to LOW and now is HIGH");
                   /* --------------- SerialDebug: --------- */
                   /* --------------- mqttDebug: --------- */
-                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin1 was put to LOW and now is HIGH", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Pin1 was put to LOW and now is HIGH", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                   /* --------------- mqttDebug: --------- */
                 }
 

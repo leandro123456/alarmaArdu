@@ -1,6 +1,4 @@
-void doDSC(){
-  
-            
+void doDSC(){           
             if (dsc.handlePanel() && dsc.statusChanged) {  // Processes data only when a valid Keybus command has been read
                 dsc.statusChanged = false;                   // Reset the status tracking flag
             
@@ -27,11 +25,11 @@ void doDSC(){
                   
                   if (atoi(forceSecureAllTrafficValue) == 1){
                     if (dsc.keybusConnected) {
-                      mqttClientRConf.publish(mqttStatusTopicValue, mqttBirthMessageValue, true, atoi(mqttQoSValue));
+                      mqttClient.publish(mqttStatusTopicValue, mqttBirthMessageValue, true, atoi(mqttQoSValue));
                       lastSentStatus = String(mqttBirthMessageValue);
                     }
                     else {
-                      mqttClientRConf.publish(mqttStatusTopicValue, mqttNoDSCValue, true, atoi(mqttQoSValue));
+                      mqttClient.publish(mqttStatusTopicValue, mqttNoDSCValue, true, atoi(mqttQoSValue));
                       lastSentStatus = String(mqttNoDSCValue);
                     }
                   }
@@ -53,22 +51,22 @@ void doDSC(){
                     else mqttClient.publish(mqttTroubleTopicValue, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
                   }
                   if (atoi(forceSecureAllTrafficValue) == 1){
-                    if (dsc.trouble) mqttClientRConf.publish(mqttTroubleTopicValue, "1", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
-                    else mqttClientRConf.publish(mqttTroubleTopicValue, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
+                    if (dsc.trouble) mqttClient.publish(mqttTroubleTopicValue, "1", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
+                    else mqttClient.publish(mqttTroubleTopicValue, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
                   }
                   
                   //Monitoring
                         if (atoi(enableMonitoringValue) > 1) {
       
-                        if (dsc.trouble) mqttClientRConf.publish((String) monitoringTopicValue + "/Trouble", "1", true, atoi(mqttQoSValue));
-                          else mqttClientRConf.publish((String) monitoringTopicValue + "/Trouble", "0", true, atoi(mqttQoSValue));
+                        if (dsc.trouble) mqttClient.publish((String) monitoringTopicValue + "/Trouble", "1", true, atoi(mqttQoSValue));
+                          else mqttClient.publish((String) monitoringTopicValue + "/Trouble", "0", true, atoi(mqttQoSValue));
       
       
                         /* --------------- SerialDebug: --------- */
                         Serial.println("MONITORING: online Status published");
                         /* --------------- SerialDebug: --------- */
                         /* --------------- mqttDebug: --------- */
-                        if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: Trouble status published", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                        if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: Trouble status published", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                         /* --------------- mqttDebug: --------- */
                         }
                   // END Monitoring
@@ -94,35 +92,35 @@ void doDSC(){
                       else if (!dsc.exitDelay[partition] && !dsc.armed[partition]) mqttClient.publish(publishTopic, "disarmed", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
                     }
                     if (atoi(forceSecureAllTrafficValue) == 1){
-                      if (dsc.exitDelay[partition]) mqttClientRConf.publish(publishTopic, "pending", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); // Publish as a retained message
-                      else if (!dsc.exitDelay[partition] && !dsc.armed[partition]) mqttClientRConf.publish(publishTopic, "disarmed", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
+                      if (dsc.exitDelay[partition]) mqttClient.publish(publishTopic, "pending", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); // Publish as a retained message
+                      else if (!dsc.exitDelay[partition] && !dsc.armed[partition]) mqttClient.publish(publishTopic, "disarmed", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
                    }
 
                    //Monitoring
                         if (atoi(enableMonitoringValue) >1) {
-                        if (dsc.exitDelay[partition]){ mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "pending", true, atoi(mqttQoSValue)); // Publish as a retained message
+                        if (dsc.exitDelay[partition]){ mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "pending", true, atoi(mqttQoSValue)); // Publish as a retained message
                             /* --------------- SerialDebug: --------- */
                             Serial.println((String)"MONITORING: PENDING Status published for partition " + partitionNumber);
                             /* --------------- SerialDebug: --------- */
                             /* --------------- mqttDebug: --------- */
-                            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: PENDING status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: PENDING status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                             /* --------------- mqttDebug: --------- */
                         }
-                          else if (!dsc.exitDelay[partition] && !dsc.armed[partition]){ mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "disarmed", true, atoi(mqttQoSValue));
+                          else if (!dsc.exitDelay[partition] && !dsc.armed[partition]){ mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "disarmed", true, atoi(mqttQoSValue));
                               /* --------------- SerialDebug: --------- */
                               Serial.println((String)"MONITORING: DISARMED Status published for partition " + partitionNumber);
                               /* --------------- SerialDebug: --------- */
                               /* --------------- mqttDebug: --------- */
-                              if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: DISARMED status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                              if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: DISARMED status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                               /* --------------- mqttDebug: --------- */ 
                           }
                         }
-                        if (atoi(enableMonitoringValue) == 1) {mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "normal", true, atoi(mqttQoSValue)); // Publish as a retained message
+                        if (atoi(enableMonitoringValue) == 1) {mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "normal", true, atoi(mqttQoSValue)); // Publish as a retained message
                             /* --------------- SerialDebug: --------- */
                             Serial.println((String)"MONITORING: NORMAL Status published for partition " + partitionNumber);
                             /* --------------- SerialDebug: --------- */
                             /* --------------- mqttDebug: --------- */
-                            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: NORMAL status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: NORMAL status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                             /* --------------- mqttDebug: --------- */
                         }
                   // END Monitoring
@@ -146,37 +144,37 @@ void doDSC(){
                         else if (dsc.armedStay[partition]) mqttClient.publish(publishTopic, "armed_home", true, atoi(mqttQoSValue));
                       }
                       if (atoi(forceSecureAllTrafficValue) == 1) {
-                        if (dsc.armedAway[partition]) mqttClientRConf.publish(publishTopic, "armed_away", true, atoi(mqttQoSValue));
-                        else if (dsc.armedStay[partition]) mqttClientRConf.publish(publishTopic, "armed_home", true, atoi(mqttQoSValue));
+                        if (dsc.armedAway[partition]) mqttClient.publish(publishTopic, "armed_away", true, atoi(mqttQoSValue));
+                        else if (dsc.armedStay[partition]) mqttClient.publish(publishTopic, "armed_home", true, atoi(mqttQoSValue));
                       }
                     
                     
                     //Monitoring
                         if (atoi(enableMonitoringValue) > 1) {
-                        if (dsc.armedAway[partition]){ mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "armed_away", true, atoi(mqttQoSValue)); // Publish as a retained message
+                        if (dsc.armedAway[partition]){ mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "armed_away", true, atoi(mqttQoSValue)); // Publish as a retained message
                             /* --------------- SerialDebug: --------- */
                             Serial.println((String)"MONITORING: ARMED_AWAY Status published for partition " + partitionNumber);
                             /* --------------- SerialDebug: --------- */
                             /* --------------- mqttDebug: --------- */
-                            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: ARMED_AWAY status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: ARMED_AWAY status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                             /* --------------- mqttDebug: --------- */
                         }
-                          else if (dsc.armedStay[partition]){ mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "armed_home", true, atoi(mqttQoSValue));
+                          else if (dsc.armedStay[partition]){ mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "armed_home", true, atoi(mqttQoSValue));
                               /* --------------- SerialDebug: --------- */
                               Serial.println((String)"MONITORING: ARMED_HOME Status published for partition " + partitionNumber);
                               /* --------------- SerialDebug: --------- */
                               /* --------------- mqttDebug: --------- */
-                              if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: ARMED_HOME status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                              if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: ARMED_HOME status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                               /* --------------- mqttDebug: --------- */ 
                           }
                         }
 
-                        if (atoi(enableMonitoringValue) == 1) {mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "normal", true, atoi(mqttQoSValue)); // Publish as a retained message
+                        if (atoi(enableMonitoringValue) == 1) {mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "normal", true, atoi(mqttQoSValue)); // Publish as a retained message
                             /* --------------- SerialDebug: --------- */
                             Serial.println((String)"MONITORING: NORMAL Status published for partition " + partitionNumber);
                             /* --------------- SerialDebug: --------- */
                             /* --------------- mqttDebug: --------- */
-                            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: NORMAL status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: NORMAL status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                             /* --------------- mqttDebug: --------- */
                         }
 
@@ -187,28 +185,28 @@ void doDSC(){
                                     mqttClient.publish(publishTopic, "disarmed", true, atoi(mqttQoSValue));
                                 }
                                 if (atoi(forceSecureAllTrafficValue) == 1) {
-                                    mqttClientRConf.publish(publishTopic, "disarmed", true, atoi(mqttQoSValue));
+                                    mqttClient.publish(publishTopic, "disarmed", true, atoi(mqttQoSValue));
                                 }
                     
                     
                     
                     //Monitoring
                         if (atoi(enableMonitoringValue) > 1) {
-                          mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "disarmed", true, atoi(mqttQoSValue)); // Publish as a retained message
+                          mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "disarmed", true, atoi(mqttQoSValue)); // Publish as a retained message
                             /* --------------- SerialDebug: --------- */
                             Serial.println((String)"MONITORING: DISARMED Status published for partition " + partitionNumber);
                             /* --------------- SerialDebug: --------- */
                             /* --------------- mqttDebug: --------- */
-                            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: DISARMED status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: DISARMED status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                             /* --------------- mqttDebug: --------- */
                         }
 
-                        if (atoi(enableMonitoringValue) == 1) {mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "normal", true, atoi(mqttQoSValue)); // Publish as a retained message
+                        if (atoi(enableMonitoringValue) == 1) {mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "normal", true, atoi(mqttQoSValue)); // Publish as a retained message
                             /* --------------- SerialDebug: --------- */
                             Serial.println((String)"MONITORING: NORMAL Status published for partition " + partitionNumber);
                             /* --------------- SerialDebug: --------- */
                             /* --------------- mqttDebug: --------- */
-                            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: NORMAL status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: NORMAL status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                             /* --------------- mqttDebug: --------- */
                         }
                     // END Monitoring
@@ -231,18 +229,18 @@ void doDSC(){
                         mqttClient.publish(publishTopic, "triggered", true, atoi(mqttQoSValue)); // Alarm tripped
                       }
                       if (atoi(forceSecureAllTrafficValue) == 1){
-                        mqttClientRConf.publish(publishTopic, "triggered", true, atoi(mqttQoSValue)); // Alarm tripped
+                        mqttClient.publish(publishTopic, "triggered", true, atoi(mqttQoSValue)); // Alarm tripped
                       }
 
 
                       //Monitoring
                         if (atoi(enableMonitoringValue) > 0) {
-                          mqttClientRConf.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "triggered", true, atoi(mqttQoSValue)); // Publish as a retained message
+                          mqttClient.publish((String)monitoringTopicValue + "/Partition" + partitionNumber, "triggered", true, atoi(mqttQoSValue)); // Publish as a retained message
                             /* --------------- SerialDebug: --------- */
                             Serial.println((String)"MONITORING: TRIGGERED Status published for partition " + partitionNumber);
                             /* --------------- SerialDebug: --------- */
                             /* --------------- mqttDebug: --------- */
-                            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: TRIGGERED status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: TRIGGERED status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                             /* --------------- mqttDebug: --------- */
                         }
                       // END Monitoring
@@ -268,23 +266,23 @@ void doDSC(){
                         else mqttClient.publish(firePublishTopic, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));                      // Fire alarm restored
                     }
                     if (atoi(forceSecureAllTrafficValue) == 1){
-                        if (dsc.fire[partition]) mqttClientRConf.publish(firePublishTopic, "1", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));  // Fire alarm tripped
-                        else mqttClientRConf.publish(firePublishTopic, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));                      // Fire alarm restored
+                        if (dsc.fire[partition]) mqttClient.publish(firePublishTopic, "1", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));  // Fire alarm tripped
+                        else mqttClient.publish(firePublishTopic, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));                      // Fire alarm restored
                     }
 
 
                     //Monitoring
                         if (atoi(enableMonitoringValue) > 1) {
       
-                        if (dsc.fire[partition]) mqttClientRConf.publish((String) monitoringTopicValue + "/Fire" + partitionNumber, "1", true, atoi(mqttQoSValue));
-                          else mqttClientRConf.publish((String) monitoringTopicValue + "/Fire" + partitionNumber, "0", true, atoi(mqttQoSValue));
+                        if (dsc.fire[partition]) mqttClient.publish((String) monitoringTopicValue + "/Fire" + partitionNumber, "1", true, atoi(mqttQoSValue));
+                          else mqttClient.publish((String) monitoringTopicValue + "/Fire" + partitionNumber, "0", true, atoi(mqttQoSValue));
       
       
                         /* --------------- SerialDebug: --------- */
                         Serial.println((String)"MONITORING: FIRE Status published for partition " + partitionNumber);
                         /* --------------- SerialDebug: --------- */
                         /* --------------- mqttDebug: --------- */
-                        if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: FIRE status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                        if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: FIRE status published for partition " + partitionNumber, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                         /* --------------- mqttDebug: --------- */
                         }
                   // END Monitoring
@@ -319,17 +317,17 @@ void doDSC(){
                             mqttClient.publish(zonePublishTopic, "1", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));            // Zone open
                           }
                           if (atoi(forceSecureAllTrafficValue) == 1){
-                            mqttClientRConf.publish(zonePublishTopic, "1", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));            // Zone open
+                            mqttClient.publish(zonePublishTopic, "1", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));            // Zone open
                           }
 
                           //Monitoring
                                 if (atoi(enableMonitoringValue) == 3) {
-                                  mqttClientRConf.publish((String) monitoringTopicValue + "/Zone" + zone, "1", true, atoi(mqttQoSValue));
+                                  mqttClient.publish((String) monitoringTopicValue + "/Zone" + zone, "1", true, atoi(mqttQoSValue));
                                   /* --------------- SerialDebug: --------- */
                                   Serial.println((String)"MONITORING: ACTIVE status published for zone " + zone);
                                   /* --------------- SerialDebug: --------- */
                                   /* --------------- mqttDebug: --------- */
-                                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: ACTIVE status published for zone " + zone, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: ACTIVE status published for zone " + zone, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                                   /* --------------- mqttDebug: --------- */
                                 }
                           // END Monitoring
@@ -340,17 +338,17 @@ void doDSC(){
                             mqttClient.publish(zonePublishTopic, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));         // Zone closed
                           }
                           if (atoi(forceSecureAllTrafficValue) == 1){
-                            mqttClientRConf.publish(zonePublishTopic, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));         // Zone closed
+                            mqttClient.publish(zonePublishTopic, "0", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));         // Zone closed
                           }
 
                           //Monitoring
                                 if (atoi(enableMonitoringValue) == 3) {
-                                  mqttClientRConf.publish((String) monitoringTopicValue + "/Zone" + zone, "0", true, atoi(mqttQoSValue));
+                                  mqttClient.publish((String) monitoringTopicValue + "/Zone" + zone, "0", true, atoi(mqttQoSValue));
                                   /* --------------- SerialDebug: --------- */
                                   Serial.println((String)"MONITORING: INACTIVE status published for zone " + zone);
                                   /* --------------- SerialDebug: --------- */
                                   /* --------------- mqttDebug: --------- */
-                                  if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: INACTIVE status published for zone " + zone, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                                  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " MONITORING: INACTIVE status published for zone " + zone, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
                                   /* --------------- mqttDebug: --------- */
                                 }
                           // END Monitoring
@@ -377,7 +375,7 @@ void controlDSC(String coMMand, int targetPartition){
               dsc.write('s');                             // Virtual keypad arm stay
             
             /* --------------- mqttDebug: --------- */
-            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " ARM_STAY called", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " ARM_STAY called", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
             /* --------------- mqttDebug: --------- */
             
             }
@@ -389,7 +387,7 @@ void controlDSC(String coMMand, int targetPartition){
               dsc.write('w');                             // Virtual keypad arm away
 
             /* --------------- mqttDebug: --------- */
-            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " ARM_AWAY called", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " ARM_AWAY called", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
             /* --------------- mqttDebug: --------- */
             
             }
@@ -401,7 +399,7 @@ void controlDSC(String coMMand, int targetPartition){
               dsc.write(accessCodeValue);
 
             /* --------------- mqttDebug: --------- */
-            if (atoi(enableMqttDebugValue) == 1) {mqttClientRConf.publish(MqttDebugTopicValue, (String) deviceIdValue + " Access Code sent to DISARM", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+            if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " Access Code sent to DISARM", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
             /* --------------- mqttDebug: --------- */
             }
 }

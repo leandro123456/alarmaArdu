@@ -41,7 +41,7 @@ String defRemoteConfigMqttPwdValue ="rZ25xbVN";  //dsc03 "3XrTOdcc"; // >>REPLAC
 char* mqttRCClientIDValue = "DSC010000000002RM"; //Para diferenciar el clientID entre el de la func ppal y el e RC  >>REPLACE_FOR_PERSO<<
 ////// FIN CUSTOM DATA /////////////
 
-#define STRING_LEN 128
+#define STRING_LEN 64
 #define NUMBER_LEN 8
 
 // -- Configuration specific key. The value should be modified if config structure was changed.
@@ -63,7 +63,7 @@ DNSServer dnsServer;
 ESP8266WebServer server(80);
 //ESP8266HTTPUpdateServer httpUpdater;
 WiFiClient net;
-WiFiClientSecure netRConf;
+WiFiClientSecure net2;
 MQTTClient mqttClient;
 MQTTClient mqttClientRConf(256);
 
@@ -72,7 +72,6 @@ void wifiConnected();
 void configSaved();
 bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper);
 void mqttMessageReceived(String &topic, String &payload);
-void mqttRConfMessageReceived(String &topic, String &payload);
 void readParamValue(const char* paramName, char* target, unsigned int len);
 const int NTP_PACKET_SIZE = 48; // NTP time is in the first 48 bytes of message
 byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
@@ -352,8 +351,8 @@ pinMode(14, OUTPUT);
 
   // Conexion mqtt para la Configuracion remota
   if (atoi(enableRConfigValue) == 1 || atoi(forceSecureAllTrafficValue) == 1)  {  
-    mqttClientRConf.begin(remoteConfigMqttServerValue, atoi(remoteConfigMqttPortValue), netRConf);
-    mqttClientRConf.onMessage(mqttRConfMessageReceived);
+    mqttClientRConf.begin(remoteConfigMqttServerValue, atoi(remoteConfigMqttPortValue), net2);
+    mqttClientRConf.onMessage(mqttMessageReceived);
   }
 
 
@@ -412,7 +411,7 @@ void loop() {
   // Conexion configuracin remota  
     if (atoi(enableRConfigValue) == 1 || atoi(forceSecureAllTrafficValue) == 1) {
       if (needRConfMqttConnect){
-        if (connectMqttRConf()){
+        if (connectMqtt()){
           needRConfMqttConnect = false;
         }
       }
@@ -420,7 +419,7 @@ void loop() {
       // --------------- SerialDebug: ---------
       Serial.println("MQTT Rconf reconnect");
       // --------------- SerialDebug: ---------         
-      connectMqttRConf();
+      connectMqtt();
     }
     }
 
