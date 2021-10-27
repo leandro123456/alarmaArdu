@@ -7,9 +7,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 # include <ESP8266HTTPUpdateServer.h>
-//#include <ESP8266HTTPUpdateServer.h>
 #include <MQTT.h>
-//#include <MQTTClient.h>
 #include <IotWebConf.h>
 #include <IotWebConfUsing.h>
 #include <EEPROM.h>
@@ -135,7 +133,7 @@ char remoteConfigRetainValue[NUMBER_LEN];
 char remoteConfigQoSValue[NUMBER_LEN];
 char enableMqttDebugValue[NUMBER_LEN];
 char MqttDebugTopicValue[STRING_LEN];
-
+char isSecureConectionValue[NUMBER_LEN];
 
 
 
@@ -155,12 +153,15 @@ const char CUSTOMHTML_BODY_INNER[] PROGMEM = "<div><img src='data:image/png;base
 // methods of IotWebConfHtmlFormatProvider .
 
 // FIN Para customizar HTML
-
+static char isSecureConectionVal[][STRING_LEN] = { "0", "1"};
+static char isSecureConectionNam[][STRING_LEN] = { "No", "Yes"};
 IotWebConfParameterGroup group2 =  IotWebConfParameterGroup("group2", "MQTT Config");
 IotWebConfTextParameter mqttServerParam = IotWebConfTextParameter("MQTT Server", "mqttServer", mqttServerValue, STRING_LEN, "mqtt.coiaca.com", nullptr, "mqtt.coiaca.com");
 IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port (unsecure)", "MQTTPort", mqttPortValue, NUMBER_LEN, "1883", "1..9999", "min='1' max='9999' step='1'");
 IotWebConfTextParameter mqttUserNameParam = IotWebConfTextParameter("MQTT user", "mqttUser", mqttUserNameValue, STRING_LEN, "mqttusr", nullptr, "mqttusr");
+IotWebConfSelectParameter isSecureConectionParam = IotWebConfSelectParameter("Is Secure Port", "Is Secure Port", isSecureConectionValue, STRING_LEN, (char*)isSecureConectionVal, (char*)isSecureConectionNam, sizeof(isSecureConectionNam) / STRING_LEN, STRING_LEN);
 IotWebConfPasswordParameter mqttUserPasswordParam = IotWebConfPasswordParameter("MQTT password", "mqttPass", mqttUserPasswordValue, STRING_LEN, "mqttpwd", nullptr, "mqttpwd");
+
 IotWebConfTextParameter mqttClientIDParam = IotWebConfTextParameter("MQTT Client ID", "mqttClientID", mqttClientIDValue, STRING_LEN,"CoiacaDSC010000000002", nullptr, "CoiacaDSC010000000002");
 
 IotWebConfParameterGroup group1 =  IotWebConfParameterGroup("group1", "Alarm Config");
