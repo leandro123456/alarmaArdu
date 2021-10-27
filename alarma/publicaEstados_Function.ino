@@ -3,10 +3,15 @@ void publicaEstados(){
   
     // PUBLISH TIMER STRING This needs to be improved being moved to Arduino Json
     if (String(tiMerStringValue).length() > 0 && atoi(publishTimerStringValue) == 1){
-      mqttClient.publish(mqttKeepAliveTopicValue, "{\"deviceId\":\"" + String(deviceIdValue) + "\",\"timerString\":\"" + String(tiMerStringValue) + "\"}" , (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
+      String msgtext="{\"deviceId\":\"" + String(deviceIdValue) + "\",\"timerString\":\"" + String(tiMerStringValue) + "\"}" ;
+      msgtext.toCharArray(textmessage, STRING_LEN);
+      mqttClient.publish(mqttKeepAliveTopicValue, textmessage, (bool) atoi(mqttRetainValue));
       
       /* --------------- mqttDebug: --------- */
-      if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Data published on: " + mqttServerValue + " Topic: " + mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdValue) + "\",\"timerString\":\"" + String(tiMerStringValue) + "\"}", false, atoi(remoteConfigQoSValue));}
+      if (atoi(enableMqttDebugValue) == 1) {
+        String msgtext=(String) deviceIdValue + " - Data published on: " + mqttServerValue + " Topic: " + mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdValue) + "\",\"timerString\":\"" + String(tiMerStringValue) + "\"}";
+        msgtext.toCharArray(textmessage, STRING_LEN);
+        mqttClient.publish(MqttDebugTopicValue,textmessage , false);}
       /* --------------- mqttDebug: --------- */
       /* --------------- SerialDebug: --------- */
         Serial.println("Publishing data...");
@@ -14,12 +19,17 @@ void publicaEstados(){
       /* --------------- SerialDebug: --------- */
     }
     // end PUBLISH TIMER STRING
-
-    mqttClient.publish(mqttKeepAliveTopicValue, (String) "{\"deviceID\":\"" + deviceIdValue + "\",\"dateTime\":\"" + getTimeString().substring(1) + "\",\"DSC\":" + dsc.keybusConnected + ",\"MQTT\":" + mqttClient.connected() + ",\"MQTTRM\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); 
+    String msgtext=(String) "{\"deviceID\":\"" + deviceIdValue + "\",\"dateTime\":\"" + getTimeString().substring(1) + "\",\"DSC\":" + dsc.keybusConnected + ",\"MQTT\":" + mqttClient.connected() + ",\"MQTTRM\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}";
+    msgtext.toCharArray(textmessage, STRING_LEN);
+    mqttClient.publish(mqttKeepAliveTopicValue,textmessage , (bool) atoi(mqttRetainValue)); 
 
   } else {
     /* --------------- mqttDebug: --------- */
-    if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - FAIL: Data cound not be published because not connected to broker: " + mqttServerValue, false, atoi(remoteConfigQoSValue));}
+    if (atoi(enableMqttDebugValue) == 1) {
+      String msgtext= (String) deviceIdValue + " - FAIL: Data cound not be published because not connected to broker: " + mqttServerValue;
+      msgtext.toCharArray(textmessage, STRING_LEN);
+      mqttClient.publish(MqttDebugTopicValue,textmessage, false);
+      }
     /* --------------- mqttDebug: --------- */
     /* --------------- SerialDebug: --------- */
       Serial.println("Publishing data...");

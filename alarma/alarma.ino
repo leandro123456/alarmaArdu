@@ -13,7 +13,6 @@
 #include <EEPROM.h>
 #include <ArduinoJson.h>
 #include <dscKeybusInterface.h>
-//#include <coiaca.h>
 
 //NTP
 #include <TimeLib.h>
@@ -41,6 +40,8 @@ char* mqttRCClientIDValue = "DSC010000000002RM"; //Para diferenciar el clientID 
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
+//NOTIFICACIONES
+char* textmessage;
 
 // -- Configuration specific key. The value should be modified if config structure was changed.
 #define CONFIG_VERSION "DSC_v0.7.0"
@@ -62,13 +63,13 @@ ESP8266WebServer server(80);
 //ESP8266HTTPUpdateServer httpUpdater;
 WiFiClient net;
 WiFiClientSecure net2;
-MQTTClient mqttClient;
+PubSubClient mqttClient;
 
 // -- Callback method declarations.
 void wifiConnected();
 void configSaved();
 bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper);
-void mqttMessageReceived(String &topic, String &payload);
+void mqttMessageReceived(char* topic, byte* payload, unsigned int length);
 void readParamValue(const char* paramName, char* target, unsigned int len);
 const int NTP_PACKET_SIZE = 48; // NTP time is in the first 48 bytes of message
 byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming & outgoing packets
@@ -344,14 +345,14 @@ pinMode(14, OUTPUT);
       Serial.println("Conexion inicial en el setup mqtt");
       Serial.println("mqttServerValue: " + (String) mqttServerValue);
       Serial.println("mqttPortValue: " + (String) mqttPortValue);
-      mqttClient.begin(mqttServerValue, atoi(mqttPortValue), net);
-      mqttClient.onMessage(mqttMessageReceived);
+      mqttClient.setServer(mqttServerValue, atoi(mqttPortValue));
+      mqttClient.setCallback(mqttMessageReceived);
   }
 
   // Conexion mqtt para la Configuracion remota
   if (atoi(enableRConfigValue) == 1 || atoi(forceSecureAllTrafficValue) == 1)  {  
-    mqttClient.begin(remoteConfigMqttServerValue, atoi(remoteConfigMqttPortValue), net2);
-    mqttClient.onMessage(mqttMessageReceived);
+    mqttClient.setServer(remoteConfigMqttServerValue, atoi(remoteConfigMqttPortValue));
+    mqttClient.setCallback(mqttMessageReceived);
   }
 
 
@@ -394,14 +395,11 @@ void loop() {
       else if ((iotWebConf.getState() == iotwebconf::OnLine) && (!mqttClient.connected())){
             // --------------- SerialDebug: ---------
             Serial.println("============================== MQTT reconnect");
-            // --------------- SerialDebug: ---------
             // --------------- mqttDebug: --------- 
             if (atoi(enableMqttDebugValue) == 1) {
-              mqttClient.publish(MqttDebugTopicValue,
-               (String) deviceIdValue + " - MQTT reconnect",
-                (bool) atoi(remoteConfigRetainValue),
-                 atoi(remoteConfigQoSValue));}
-            // --------------- mqttDebug: --------- 
+              String msgtext=(String) deviceIdValue + " - MQTT reconnect";
+              msgtext.toCharArray(textmessage, STRING_LEN);
+              mqttClient.publish(MqttDebugTopicValue,textmessage,(bool) atoi(remoteConfigRetainValue));}
             connectMqtt();
           }
     }
@@ -428,7 +426,10 @@ void loop() {
     Serial.println("Rebooting after 1 second.");
     // --------------- SerialDebug: --------- 
     // --------------- mqttDebug: --------- 
-    if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Rebooting after 1 second..." , (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+    if (atoi(enableMqttDebugValue) == 1) {
+      String msgtext=(String) deviceIdValue + " - Rebooting after 1 second..." ;
+      msgtext.toCharArray(textmessage, STRING_LEN);
+      mqttClient.publish(MqttDebugTopicValue,textmessage , (bool) atoi(remoteConfigRetainValue));}
     // --------------- mqttDebug: --------- 
     
     iotWebConf.delay(1000);
@@ -443,7 +444,10 @@ void loop() {
     Serial.println((String)"DateTime: " + getReadableTime() + " - Timezone: " + timeZoneValue + " DST: " + timeDSTValue + " - TimeString: " + getTimeString());
     // --------------- SerialDebug: --------- 
     // --------------- mqttDebug: ---------
-    if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - DateTime: " + getReadableTime() + " - Timezone: " + timeZoneValue + " DST: " + timeDSTValue + " - TimeString: " + getTimeString(), (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+    if (atoi(enableMqttDebugValue) == 1) {
+      String msgtext=(String) deviceIdValue + " - DateTime: " + getReadableTime() + " - Timezone: " + timeZoneValue + " DST: " + timeDSTValue + " - TimeString: " + getTimeString();
+      msgtext.toCharArray(textmessage, STRING_LEN);
+      mqttClient.publish(MqttDebugTopicValue, textmessage, (bool) atoi(remoteConfigRetainValue));}
     // --------------- mqttDebug: --------- 
   }
       
@@ -464,7 +468,10 @@ if (iotWebConf.getState() == iotwebconf::OnLine) {
         Serial.println(getTimeString().substring(1) + " - Keep Alive interval elapsed. Automatically publishing...");
         // --------------- SerialDebug: --------- 
         // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - [" + getTimeString().substring(1) + "] - Keep Alive interval elapsed. Automatically publishing...", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+        if (atoi(enableMqttDebugValue) == 1) {
+          String msgtext=(String) deviceIdValue + " - [" + getTimeString().substring(1) + "] - Keep Alive interval elapsed. Automatically publishing...";
+          msgtext.toCharArray(textmessage, STRING_LEN);
+          mqttClient.publish(MqttDebugTopicValue,textmessage, (bool) atoi(remoteConfigRetainValue));}
         // --------------- mqttDebug: --------- 
   publicaEstados();
   lastPublish = millis();
@@ -488,7 +495,7 @@ if (iotWebConf.getState() != iotwebconf::OnLine) {
     Serial.println(F("DSC Keybus Interface stoped."));
     // --------------- SerialDebug: ---------
     // --------------- mqttDebug: --------- 
-    // ESTO NO PORQU NO ESTA CONECTADO: if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " DSC Keybus Interface stoped.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+    // ESTO NO PORQU NO ESTA CONECTADO: if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " DSC Keybus Interface stoped.", (bool) atoi(remoteConfigRetainValue));}
     // --------------- mqttDebug: --------- 
   }
 }
@@ -499,12 +506,13 @@ if (DSCBegined){   //Si el bus esta iniciado, hace lo propio con la alarma
   // Publica la particion activa para la escritura (si cambio)
   if (activePartition != dsc.writePartition){
       activePartition = dsc.writePartition;
-      
+      String actparttext=""+activePartition;
+      actparttext.toCharArray(textmessage, STRING_LEN);
       if (atoi(forceSecureAllTrafficValue) != 1){
-        mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition), true, atoi(mqttQoSValue));
+        mqttClient.publish(mqttActivePartitionTopicValue,textmessage , true);
         }
       if (atoi(forceSecureAllTrafficValue) == 1){
-        mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition), true, atoi(mqttQoSValue));
+        mqttClient.publish(mqttActivePartitionTopicValue, textmessage, true);
         }
    }      
 }
@@ -564,14 +572,19 @@ void wifiConnected(){
   DSCBegined = true;
   Serial.println(F("DSC Keybus Interface begined."));
   activePartition = dsc.writePartition;
-  mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition), true, atoi(mqttQoSValue)); 
+  String msgtext=""+activePartition;
+  msgtext.toCharArray(textmessage, STRING_LEN);
+  mqttClient.publish(mqttActivePartitionTopicValue,textmessage, true); 
 }
 
 void configSaved(){
 /* --------------- SerialDebug: --------- */
 Serial.println("Configuration updated.");
 /* --------------- mqttDebug: --------- */
-if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Configuration updated.", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+if (atoi(enableMqttDebugValue) == 1) {
+  String msgtext=(String) deviceIdValue + " - Configuration updated.";
+  msgtext.toCharArray(textmessage, STRING_LEN);
+  mqttClient.publish(MqttDebugTopicValue, textmessage, (bool) atoi(remoteConfigRetainValue));}
   needReset = true;
 }
 

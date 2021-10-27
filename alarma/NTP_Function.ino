@@ -58,8 +58,11 @@ time_t getNtpTime(){
   Serial.println((String)"Sending NTP request to " + ntpServerValue);
   /* --------------- SerialDebug: --------- */
   /* --------------- mqttDebug: --------- */
-  //if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Sending NTP request to " + ntpServerValue + " (" + ntpServerIP + ")", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
-  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Sending NTP request to " + ntpServerValue, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+  //if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Sending NTP request to " + ntpServerValue + " (" + ntpServerIP + ")", (bool) atoi(remoteConfigRetainValue));}
+  if (atoi(enableMqttDebugValue) == 1) {
+    String msgtext= (String) deviceIdValue + " - Sending NTP request to " + ntpServerValue;
+    msgtext.toCharArray(textmessage, STRING_LEN);
+    mqttClient.publish(MqttDebugTopicValue,textmessage, (bool) atoi(remoteConfigRetainValue));}
   /* --------------- mqttDebug: --------- */
   // get a random server from the pool
   WiFi.hostByName(ntpServerValue, ntpServerIP);
@@ -72,7 +75,11 @@ time_t getNtpTime(){
       Serial.println("NTP response received");
       /* --------------- SerialDebug: --------- */
       /* --------------- mqttDebug: --------- */
-      if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - NTP response received", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+      if (atoi(enableMqttDebugValue) == 1) {
+        String msgtext= (String) deviceIdValue + " - NTP response received";
+        msgtext.toCharArray(textmessage, STRING_LEN);
+        mqttClient.publish(MqttDebugTopicValue,textmessage, (bool) atoi(remoteConfigRetainValue));
+        }
       /* --------------- mqttDebug: --------- */
       Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
       unsigned long secsSince1900;
@@ -89,7 +96,11 @@ time_t getNtpTime(){
   Serial.println("No response from NTP server");
   /* --------------- SerialDebug: --------- */
   /* --------------- mqttDebug: --------- */
-  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - No response from NTP server", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+  if (atoi(enableMqttDebugValue) == 1) {
+    String msgtext=(String) deviceIdValue + " - No response from NTP server";
+    msgtext.toCharArray(textmessage, STRING_LEN);
+    mqttClient.publish(MqttDebugTopicValue, textmessage, (bool) atoi(remoteConfigRetainValue));
+    }
   /* --------------- mqttDebug: --------- */
   return 0; // return 0 if unable to get the time
 }
@@ -218,7 +229,11 @@ String tmrStr = String(tiMerStringValue);
                       Serial.println("Executing Timer event: " + timerEventString);
                       /* --------------- SerialDebug: --------- */
                       /* --------------- mqttDebug: --------- */
-                      if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Executing Timer event: " + timerEventString, (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+                      if (atoi(enableMqttDebugValue) == 1) {
+                        String msgtext=(String) deviceIdValue + " - Executing Timer event: " + timerEventString;
+                        msgtext.toCharArray(textmessage, STRING_LEN);
+                        mqttClient.publish(MqttDebugTopicValue,textmessage , (bool) atoi(remoteConfigRetainValue));
+                        }
                       /* --------------- mqttDebug: --------- */
 
                       /////////// Magic! 
@@ -257,17 +272,23 @@ String tmrStr = String(tiMerStringValue);
           Serial.println("Timer: No DateTime info from NTP yet. Nothing can be done!");
           /* --------------- SerialDebug: --------- */
           /* --------------- mqttDebug: --------- */
-          if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Timer: No DateTime info from NTP yet. Nothing can be done!", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext= (String) deviceIdValue + " - Timer: No DateTime info from NTP yet. Nothing can be done!";
+            msgtext.toCharArray(textmessage, STRING_LEN);
+            mqttClient.publish(MqttDebugTopicValue,textmessage, (bool) atoi(remoteConfigRetainValue));
+            }
           /* --------------- mqttDebug: --------- */
       }
     }
     if(tmrStr.length()%7 != 0 || tmrStr.length() == 0) {
       /* --------------- SerialDebug: --------- */
       Serial.println("ERROR: Wrong Timer String or not specified");
-      /* --------------- SerialDebug: --------- */
       /* --------------- mqttDebug: --------- */
-      if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - ERROR: Wrong Timer String or not specified", (bool) atoi(remoteConfigRetainValue), atoi(remoteConfigQoSValue));}
-      /* --------------- mqttDebug: --------- */   
+      if (atoi(enableMqttDebugValue) == 1) {
+        String msgtext=(String) deviceIdValue + " - ERROR: Wrong Timer String or not specified";
+        msgtext.toCharArray(textmessage, STRING_LEN);
+        mqttClient.publish(MqttDebugTopicValue,textmessage , (bool) atoi(remoteConfigRetainValue));
+        } 
   }
   
 
