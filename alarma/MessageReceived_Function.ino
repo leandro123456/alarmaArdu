@@ -1,18 +1,20 @@
 void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
+  String topico=String(topic);
 /* --------------- SerialDebug: --------- */
-Serial.println("########################  Message received: " +String(topic) + " - " + String((char *)payload));
+Serial.println("########################  Message received: " +topico+ " **-** " + String((char *)payload));
 /* --------------- SerialDebug: --------- */
 /* --------------- mqttDebug: --------- */
 if (atoi(enableMqttDebugValue) == 1) {
-  String msgtext= (String) deviceIdValue + " - Message received: Topic: " + topic + " Payload: " + String((char *)payload);
+  String msgtext= (String) deviceIdValue + " - Message received: Topic: " + topico + " Payload: " + String((char *)payload);
   msgtext.toCharArray(textmessage, STRING_LEN);
   mqttClient.publish(MqttDebugTopicValue,textmessage, (bool) atoi(remoteConfigRetainValue));}
 /* --------------- mqttDebug: --------- */
    
 // Actualiza con el ltimo estado publicado
-if (topic == mqttStatusTopicValue) lastSentStatus = String((char *)payload);
+if (topico == mqttStatusTopicValue) lastSentStatus = String((char *)payload);
 
-if (topic == mqttCommandTopicValue){
+Serial.println("va a comparar si son guales el tipico recibido: "+ String(topic) +": y el parametro del topico: "+ String(mqttCommandTopicValue));
+if (topico  == mqttCommandTopicValue){
 
 String partitionN = String((char *)payload).substring(0,1);
 String acTion = String((char *)payload).substring(1);    
@@ -26,7 +28,7 @@ Serial.println("acTion: " + acTion);
   //if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, (String) deviceIdValue + " - Inside IF - Decode: Partition: " + partitionN + " Action: " + acTion, (bool) atoi(remoteConfigRetainValue));}
   /* --------------- mqttDebug: --------- */
   
-Serial.println("entro en el IF");
+      Serial.println("entro en el IF. tipo de accion: "+ acTion);
  
             // Arm stay  REEMPLAZAR ESTO POR controlDSC("arm_stay",partitionN.toInt());
             if (acTion == "S" && !dsc.armed[partitionN.toInt()-1] && !dsc.exitDelay[partitionN.toInt()-1]) {

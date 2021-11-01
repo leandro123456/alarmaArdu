@@ -8,9 +8,8 @@ boolean connectMqtt() {
    /* --------------- SerialDebug: --------- */
   Serial.println("Connecting to MQTT server...");
   if (atoi(enableMqttDebugValue) == 1) {
-    String msgtext= (String) deviceIdValue + " - Connecting to MQTT server...";
-    msgtext.toCharArray(textmessage, STRING_LEN);
-    mqttClient.publish(MqttDebugTopicValue,textmessage, (bool) atoi(remoteConfigRetainValue));
+    String msgtext= deviceID + " - Connecting to MQTT server...";
+    mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(remoteConfigRetainValue));
      }
 
   if (!connectMqttOptions()) {
@@ -22,9 +21,8 @@ boolean connectMqtt() {
   /* --------------- SerialDebug: --------- */
   Serial.println("Connected MQTT server DEBUG");
   if (atoi(enableMqttDebugValue) == 1) {
-    String msgtext= (String) deviceIdValue + " - Connected to MQTT server!";
-    msgtext.toCharArray(textmessage, STRING_LEN);
-    mqttClient.publish(MqttDebugTopicValue,textmessage, (bool) atoi(remoteConfigRetainValue));}
+    String msgtext= deviceID + " - Connected to MQTT server!";
+    mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(remoteConfigRetainValue));}
   /* --------------- mqttDebug: --------- */
   
   if (dsc.keybusConnected) {
@@ -36,9 +34,8 @@ boolean connectMqtt() {
     /* --------------- SerialDebug: --------- */
     /* --------------- mqttDebug: --------- */
     if (atoi(enableMqttDebugValue) == 1) {
-      String msgtext=(String) deviceIdValue + " - Status message published: " + lastSentStatus;
-      msgtext.toCharArray(textmessage, STRING_LEN);
-      mqttClient.publish(MqttDebugTopicValue, textmessage, (bool) atoi(remoteConfigRetainValue));}
+      String msgtext=deviceID + " - Status message published: " + lastSentStatus;
+      mqttClient.publish(MqttDebugTopicValue, msgtext.c_str(), (bool) atoi(remoteConfigRetainValue));}
     /* --------------- mqttDebug: --------- */
   }else {
     mqttClient.publish(mqttStatusTopicValue, mqttNoDSCValue, true);
@@ -47,9 +44,8 @@ boolean connectMqtt() {
     /* --------------- SerialDebug: --------- */
     Serial.println("Status message published: " + lastSentStatus);
     if (atoi(enableMqttDebugValue) == 1) {
-      String msgtext= (String) deviceIdValue + " - Status message published: " + lastSentStatus;
-      msgtext.toCharArray(textmessage, STRING_LEN);
-      mqttClient.publish(MqttDebugTopicValue,textmessage, (bool) atoi(remoteConfigRetainValue));}
+      String msgtext= deviceID + " - Status message published: " + lastSentStatus;
+      mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(remoteConfigRetainValue));}
     /* --------------- mqttDebug: --------- */
   }
   // Para publicar estados iniciales
@@ -61,9 +57,8 @@ boolean connectMqtt() {
   /* --------------- SerialDebug: --------- */
   Serial.println((String) "Subcribed to: " + mqttCommandTopicValue);
   if (atoi(enableMqttDebugValue) == 1) {
-    String msgtext= (String) deviceIdValue + " - Subcribed to: " + mqttCommandTopicValue;
-    msgtext.toCharArray(textmessage, STRING_LEN);
-    mqttClient.publish(MqttDebugTopicValue,textmessage, (bool)atoi(remoteConfigRetainValue));}
+    String msgtext= deviceID + " - Subcribed to: " + mqttCommandTopicValue;
+    mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool)atoi(remoteConfigRetainValue));}
   /* --------------- mqttDebug: --------- */
  
 
@@ -77,12 +72,11 @@ boolean connectMqttOptions(){
     boolean result;
 //    if (atoi(isSecurePort) == 1)
       net2.setInsecure();
-//    mqttClient.setWill(mqttStatusTopicValue, mqttLwtMessageValue, true, 0);
     Serial.println((String)"mqttClientID: " + mqttClientIDValue);
     Serial.println((String)"mqttUserNameValue: " + mqttUserNameValue);
     Serial.println((String)"mqttUserPasswordValue: " + mqttUserPasswordValue);
     if (mqttUserPasswordValue[0] != '\0') {
-      result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue, mqttUserPasswordValue);
+      result = mqttClient.connect(mqttClientIDValue,mqttUserNameValue, mqttUserPasswordValue,mqttStatusTopicValue,0,true,mqttLwtMessageValue);
     }else{
       result =false;
     }
