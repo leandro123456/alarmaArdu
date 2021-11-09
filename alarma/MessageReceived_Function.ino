@@ -128,3 +128,27 @@ void mqttMessageReceived(String &topic, String &payload){
     }      
   }
 }
+
+
+void controlDSC(String coMMand, int targetPartition){
+  // Arm stay
+  if (coMMand == "arm_stay") {
+    dsc.writePartition = targetPartition;         // Sets writes to the partition number
+    dsc.write('s');                               // Virtual keypad arm stay
+  }
+  // Arm away
+  else if (coMMand == "arm_away") {
+    dsc.writePartition = targetPartition;         // Sets writes to the partition number
+    dsc.write('w');                               // Virtual keypad arm away
+  }
+  // Disarm
+  else if (coMMand == "disarm") {
+    dsc.writePartition = targetPartition;         // Sets writes to the partition number
+    dsc.write(accessCodeValue);                   // Virtual keypad Disarm
+  }
+
+  // --------------- mqttDebug: --------- 
+  if (atoi(enableMqttDebugValue) == 1) {
+    mqttClient.publish(MqttDebugTopicValue, deviceID + " "+ coMMand +" called", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
+  }
+}
