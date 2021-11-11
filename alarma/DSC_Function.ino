@@ -1,8 +1,5 @@
 void doDSC(){     
-  char* topicpartition;
-  String troubletopic=(String) monitoringTopicValue + "/Trouble";
-  String texto;
-  String msgtext1;
+  
   if (dsc.statusChanged) {      // Checks if the security system status has changed
     dsc.statusChanged = false;  // Reset the status tracking flag
   
@@ -44,6 +41,7 @@ void doDSC(){
         mqttClient.publish(mqttTroubleTopicValue, "0", (bool) atoi(mqttRetainValue));
       
       if (atoi(enableMonitoringValue) > 1) {
+        String troubletopic=(String) monitoringTopicValue + "/Trouble";
         if (dsc.trouble)
           mqttClient.publish(troubletopic.c_str(), "1", true);
         else
@@ -78,11 +76,16 @@ void doDSC(){
         char publishTopic[strlen(mqttPartitionTopicValue) + 2]; // Appends the mqttPartitionTopic with the partition number
         appendPartition(mqttPartitionTopicValue, partition, publishTopic);  // Appends the mqttPartitionTopic with the partition number
 
+        String msgtext1;
         if (dsc.armed[partition]) {
-          if (dsc.armedAway[partition] && dsc.noEntryDelay[partition]) mqttClient.publish(publishTopic, "armed_night", true);
-          else if (dsc.armedAway[partition]) mqttClient.publish(publishTopic, "armed_away", true);
-          else if (dsc.armedStay[partition] && dsc.noEntryDelay[partition]) mqttClient.publish(publishTopic, "armed_night", true);
-          else if (dsc.armedStay[partition]) mqttClient.publish(publishTopic, "armed_home", true);
+          if (dsc.armedAway[partition] && dsc.noEntryDelay[partition]) 
+            mqttClient.publish(publishTopic, "armed_night", true);
+          else if (dsc.armedAway[partition]) 
+            mqttClient.publish(publishTopic, "armed_away", true);
+          else if (dsc.armedStay[partition] && dsc.noEntryDelay[partition]) 
+            mqttClient.publish(publishTopic, "armed_night", true);
+          else if (dsc.armedStay[partition]) 
+            mqttClient.publish(publishTopic, "armed_home", true);
         
           //Monitoring
           if (atoi(enableMonitoringValue) > 1) {
@@ -106,7 +109,6 @@ void doDSC(){
       if (dsc.exitDelayChanged[partition]) {
         dsc.exitDelayChanged[partition] = false;  // Resets the exit delay status flag
 
-        // Appends the mqttPartitionTopic with the partition number
         char publishTopic[strlen(mqttPartitionTopicValue) + 2];
         appendPartition(mqttPartitionTopicValue, partition, publishTopic);
 
@@ -215,18 +217,18 @@ void sendMonitoring(String topicoDeMensaje, String mensaje, String mensajeDebug)
 
   if (atoi(enableMonitoringValue) > 1) {
     mqttClient.publish(topicoDeMensaje.c_str(), mensaje.c_str(), true); // Publish as a retained message
-    /* --------------- SerialDebug: --------- */
+    //--------------- SerialDebug: --------- 
     Serial.println(mensajeDebug);
-    /* --------------- mqttDebug: --------- */
+    // --------------- mqttDebug: --------- 
     if (atoi(enableMqttDebugValue) == 1) {
       mqttClient.publish(MqttDebugTopicValue,mensajeDebug.c_str() , (bool) atoi(mqttRetainValue));
     }
   }
   if (atoi(enableMonitoringValue) == 1) {
     mqttClient.publish(topicoDeMensaje.c_str(), "normal", true); // Publish as a retained message
-    /* --------------- SerialDebug: --------- */
+    //--------------- SerialDebug: --------- 
     Serial.println(mensajeDebug);
-    /* --------------- mqttDebug: --------- */
+    // --------------- mqttDebug: --------- 
     if (atoi(enableMqttDebugValue) == 1) 
       mqttClient.publish(MqttDebugTopicValue,mensajeDebug.c_str(), (bool) atoi(mqttRetainValue));
   }
@@ -237,44 +239,4 @@ void appendPartition(const char* sourceTopic, byte sourceNumber, char* publishTo
   strcpy(publishTopic, sourceTopic);
   itoa(sourceNumber + 1, partitionNumber, 10);
   strcat(publishTopic, partitionNumber);
-}
-
-
-void controlDSC(String coMMand, int targetPartition){
-  char* msgpartition;
-  String textova;
-  // Arm stay
-  if (coMMand == "arm_stay" && !dsc.armed[targetPartition-1] && !dsc.exitDelay[targetPartition-1]) {
-    //while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
-    dsc.writePartition = targetPartition;         // Sets writes to the partition number
-    dsc.write('s');                             // Virtual keypad arm stay
-    if (atoi(enableMqttDebugValue) == 1) {
-      textova=deviceID + " ARM_STAY called";
-      mqttClient.publish(MqttDebugTopicValue,textova.c_str() , (bool) atoi(mqttRetainValue));
-    }
-  }
-
-  // Arm away
-  else if (coMMand == "arm_away" && !dsc.armed[targetPartition-1] && !dsc.exitDelay[targetPartition-1]) {
-    //  while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
-    dsc.writePartition = targetPartition;         // Sets writes to the partition number
-    dsc.write('w');                             // Virtual keypad arm away
-    /* --------------- mqttDebug: --------- */
-    if (atoi(enableMqttDebugValue) == 1) {
-      textova=deviceID + " ARM_AWAY called";
-      mqttClient.publish(MqttDebugTopicValue,textova.c_str() , (bool) atoi(mqttRetainValue));
-    }
-  }
-
-  // Disarm
-  else if (coMMand == "disarm" && (dsc.armed[targetPartition-1] || dsc.exitDelay[targetPartition-1])) {
-    //  while (!dsc.writeReady) dsc.handlePanel();  // Continues processing Keybus data until ready to write
-    dsc.writePartition = targetPartition;         // Sets writes to the partition number
-    dsc.write(accessCodeValue);
-    /* --------------- mqttDebug: --------- */
-    if (atoi(enableMqttDebugValue) == 1) {
-      textova=deviceID + " Access Code sent to DISARM";
-      mqttClient.publish(MqttDebugTopicValue, textova.c_str(), (bool) atoi(mqttRetainValue));
-    }
-  }
 }
