@@ -3,74 +3,82 @@ boolean connectMqtt() {
   unsigned long now = millis();
   if ((lastMqttConnectionAttempt + 1000) > now)
   {
-    // Do not repeat within 1 sec.
     return false;
   }
-   /* --------------- SerialDebug: --------- */
+
   Serial.println("Connecting to MQTT server...");
   if (atoi(enableMqttDebugValue) == 1) {
-    mqttClient.publish(MqttDebugTopicValue, deviceID + 
+    mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + 
     " - Connecting to MQTT server...", (bool) atoi(mqttRetainValue),atoi(mqttQoSValue));
   }
 
   if (!connectMqttOptions()) {
-    Serial.println("entro a connectMqttOptions VA A a salir con false");
     lastMqttConnectionAttempt = now;
     return false;
   }
 
   /* --------------- SerialDebug: --------- */
-  Serial.println("Connected MQTT server DEBUG");
-  if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, deviceID + " - Connected to MQTT server!", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
-  /* --------------- mqttDebug: --------- */
-  
-  if (dsc.keybusConnected) {
-    mqttClient.publish(mqttStatusTopicValue, mqttBirthMessageValue, true, atoi(mqttQoSValue));
-    lastSentStatus = String(mqttBirthMessageValue);
-
-    /* --------------- SerialDebug: --------- */
-    Serial.println("Status message published: " + lastSentStatus);
-    /* --------------- mqttDebug: --------- */
-    if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, deviceID + " - Status message published: " + lastSentStatus, (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
-  }else {
-    mqttClient.publish(mqttStatusTopicValue, mqttNoDSCValue, true, atoi(mqttQoSValue));
-    lastSentStatus = String(mqttNoDSCValue);
-
-    /* --------------- SerialDebug: --------- */
-    Serial.println("Status message published: " + lastSentStatus);
-    if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, deviceID + " - Status message published: " + lastSentStatus, (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
-    /* --------------- mqttDebug: --------- */
-  }
-  // Para publicar estados iniciales
-  publicaEstados();
-
-  //Subcribe al topic de comando
-  mqttClient.subscribe(mqttCommandTopicValue);
-  /* --------------- SerialDebug: --------- */
-  Serial.println((String) "Subcribed to: " + mqttCommandTopicValue);
-  /* --------------- mqttDebug: --------- */
   if (atoi(enableMqttDebugValue) == 1) {
-    mqttClient.publish(MqttDebugTopicValue, deviceID + " - Subcribed to: " + mqttCommandTopicValue), (bool) atoi(mqttRetainValue), atoi(mqttQoSValue);
-  }
+    mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Connected to MQTT server!", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
+  /* --------------- mqttDebug: --------- */
   
+  Serial.println("DeviceID FINAL VALUE: -"+ String(deviceIdFinalValue)+"-");
+  if(contPrimerINgreso==1 &&(String(deviceIdFinalValue).startsWith("empty") || String(deviceIdFinalValue).equals(""))){
+    PublicarConfiguracionInicial();
+    mqttClient.subscribe(mqttDeviceConfigResponseValue);
+    Serial.println((String) "Initial Subcribed to: " + mqttDeviceConfigResponseValue);
+    contPrimerINgreso=2;
+  }
+  else{
+    if (dsc.keybusConnected) {
+      mqttClient.publish(mqttStatusTopicValue, mqttBirthMessageValue, true, atoi(mqttQoSValue));
+      lastSentStatus = String(mqttBirthMessageValue);
+
+      Serial.println("Status message published: " + lastSentStatus);
+      /* --------------- mqttDebug: --------- */
+      if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Status message published: " + lastSentStatus, (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
+    }else {
+      mqttClient.publish(mqttStatusTopicValue, mqttNoDSCValue, true, atoi(mqttQoSValue));
+      lastSentStatus = String(mqttNoDSCValue);
+
+      /* --------------- SerialDebug: --------- */
+      Serial.println("Status message published: " + lastSentStatus);
+      if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Status message published: " + lastSentStatus, (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
+      /* --------------- mqttDebug: --------- */
+    }
+
+    publicaEstados();
+    mqttClient.subscribe(mqttCommandTopicValue);
+    /* --------------- SerialDebug: --------- */
+    Serial.println((String) "Subcribed to: " + mqttCommandTopicValue);
+    /* --------------- mqttDebug: --------- */
+    if (atoi(enableMqttDebugValue) == 1) {
+      mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Subcribed to: " + mqttCommandTopicValue), (bool) atoi(mqttRetainValue), atoi(mqttQoSValue);
+    }
+  }
   return true;
 }
 
 
 
 boolean connectMqttOptions(){
-  Serial.println("START OPTION to MQTT server...");
   boolean result;
   net2.setInsecure();
   mqttClient.setWill(mqttStatusTopicValue, mqttLwtMessageValue, true, 0);
-  Serial.println((String)"mqttClientID: " + mqttClientIDValue);
-  Serial.println((String)"mqttUserNameValue: " + mqttUserNameValue);
-  Serial.println((String)"mqttUserPasswordValue: " + mqttUserPasswordValue);
-  if (mqttUserPasswordValue[0] != '\0') {
-    result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue, mqttUserPasswordValue);
-  }else{
-    result =false;
+  if(String(deviceIdFinalValue).equals("empty") || String(deviceIdFinalValue).equals("")){
+    Serial.println((String)"mqttClientID INITIAL: " + String(clientIDrnd));
+    result = mqttClient.connect(clientIDrnd, "mqttusr", "mqttpwd");
+    return result;
   }
-  Serial.println("RESULTADO DE LA CONEXION: " + result);
-  return result;
+  else{
+  //  Serial.println((String)"mqttClientID: " + mqttClientIDValue);
+  //  Serial.println((String)"mqttUserNameValue: " + mqttUserNameValue);
+  //  Serial.println((String)"mqttUserPasswordValue: " + mqttUserPasswordValue);
+    if (mqttUserPasswordValue[0] != '\0') {
+      result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue, mqttUserPasswordValue);
+    }else{
+      result =false;
+    }
+    return result;
+  }
 }

@@ -1,19 +1,36 @@
-void publicaEstados(){
+void PublicarConfiguracionInicial(){
   if(mqttClient.connected()){
-    mqttClient.publish(mqttKeepAliveTopicValue, "{\"deviceID\":\"" + deviceID +"\",\"DSC\":" + dsc.keybusConnected + ",\"MQTT\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); 
+    mqttClient.publish(mqttDeviceConfigValue, "{\"mail\":\""+ (String)emailValue + "\",\"pass\":\"" + (String)passwordFinalValue + "\"}", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); 
     /// --------------- SerialDebug: ----------
-    Serial.println("Publishing data...");
-    Serial.println("Message sent. Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + deviceID + "\"}" );
+    Serial.println("Publishing Initial data to register...");
+    Serial.println("Message sent to initial register. Topic: " + (String)mqttDeviceConfigValue + "{\"mail\":\""+ (String)emailValue + ",\"userPassword\":" + (String)passwordFinalValue + "}" );
     // --------------- mqttDebug: ---------
     if (atoi(enableMqttDebugValue) == 1) {
-      mqttClient.publish(MqttDebugTopicValue, deviceID + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + deviceID +"\"}", false, atoi(mqttQoSValue));
+      mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttDeviceConfigValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) +"\"}", false, atoi(mqttQoSValue));
+    }
+  }else{
+    // --------------- SerialDebug: ----------
+    Serial.println("FAIL: Data cound not be published because not connected to broker" );
+  }
+}
+
+void publicaEstados(){
+  if(mqttClient.connected()){
+    Serial.println("Devide ID: "+ String(deviceIdFinalValue));
+    mqttClient.publish(mqttKeepAliveTopicValue, "{\"deviceID\":\"" + String(deviceIdFinalValue) +"\",\"DSC\":" + dsc.keybusConnected + ",\"MQTT\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); 
+    /// --------------- SerialDebug: ----------
+    Serial.println("Publishing data...");
+    Serial.println("Message sent. Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) + "\"}" );
+    // --------------- mqttDebug: ---------
+    if (atoi(enableMqttDebugValue) == 1) {
+      mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) +"\"}", false, atoi(mqttQoSValue));
     }
   } else {
-    /// --------------- SerialDebug: ----------
+    // --------------- SerialDebug: ----------
     Serial.println("FAIL: Data cound not be published because not connected to broker" );
     // --------------- mqttDebug: ---------
     if (atoi(enableMqttDebugValue) == 1) {
-      mqttClient.publish(MqttDebugTopicValue, deviceID + " - FAIL: Data cound not be published because not connected to broker: " + mqttServerValue, false, atoi(mqttQoSValue));
+      mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - FAIL: Data cound not be published because not connected to broker: " + mqttServerValue, false, atoi(mqttQoSValue));
     }
   }
 }
