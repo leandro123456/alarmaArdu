@@ -1,10 +1,6 @@
- 
-#include <ESP8266WiFi.h>
-#include <MQTT.h>
+ #include <ESP8266WiFi.h>
 #include <IotWebConf.h>
 #include <IotWebConfUsing.h>
-#include <ArduinoJson.h>
-#include <dscKeybusInterface.h>
 #include <EEPROM.h>
 #include <ESP8266HTTPUpdateServer.h>
 
@@ -19,18 +15,10 @@ const char wifiInitialApPassword[] = "12345678";
 #define CONFIG_PIN 12
 #define STATUS_PIN 0   
 
-// Configures the Keybus interface with the specified pins - dscWritePin is optional, leaving it out disables the virtual keypad.
-#define dscClockPin 5  // esp8266: D1, D2, D8 (GPIO 5, 4, 15)
-#define dscReadPin 4   // esp8266: D1, D2, D8 (GPIO 5, 4, 15)
-#define dscWritePin 15  // esp8266: D1, D2, D8 (GPIO 5, 4, 15)
-dscKeybusInterface dsc(dscClockPin, dscReadPin, dscWritePin);
-
 // Servicios
 DNSServer dnsServer;
 ESP8266WebServer server(80);
 WiFiClient net;
-WiFiClientSecure net2;
-MQTTClient mqttClient;
 ESP8266HTTPUpdateServer httpUpdater;
 
 void wifiConnected();
@@ -44,13 +32,7 @@ byte packetBuffer[NTP_PACKET_SIZE];
 unsigned long lastPublish;
 int timerMillis;
 int timerEventDone[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    
-bool DSCBegined = false;
-String lastSentStatus;
-int activePartition;
-int contPrimerINgreso;
 
-boolean needMqttConnect = false;
 boolean needReset = false;
 unsigned long lastReport = 0;
 unsigned long lastMqttConnectionAttempt = 0;
@@ -89,7 +71,7 @@ char monitoringTopicValue[STRING_LEN];
 char enableMqttDebugValue[NUMBER_LEN];
 char MqttDebugTopicValue[STRING_LEN];
 char isSecureConectionValue[NUMBER_LEN];
-//char remoteUpateFirmware[STRING_LEN];
+char remoteUpateFirmware[STRING_LEN];
 
 IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
 
@@ -206,170 +188,43 @@ void setup() {
   server.on("/", handleRoot);
   server.on("/config", []{ iotWebConf.handleConfig(); });
   server.onNotFound([](){ iotWebConf.handleNotFound(); });
-
-
-  // Conexion mqtt para la funcionalidad principal
-  if (atoi(isSecureConectionValue) != 1) {
-      Serial.println("Conection insecure");
-      mqttClient.begin(mqttServerValue, atoi(mqttPortValue), net);
-      mqttClient.onMessage(mqttMessageReceived);
-  }
-
-  // Conexion mqtt para la Configuracion remota
-  if (atoi(isSecureConectionValue) == 1)  {  
-    Serial.println("Conection secure");
-    mqttClient.begin(mqttServerValue, atoi(mqttPortValue), net2);
-    mqttClient.onMessage(mqttMessageReceived);
-  }
 }
 
 
 void loop() {
   iotWebConf.doLoop();
-  mqttClient.loop();
-  dsc.loop();
 
-  if (needMqttConnect){
-    if (connectMqtt()){
-      needMqttConnect = false;
-    }
-  }
-  else{
-    if ((iotWebConf.getState() == iotwebconf::OnLine) && (!mqttClient.connected())){
-      if (atoi(enableMqttDebugValue) == 1) {
-        mqttClient.publish(MqttDebugTopicValue,String(deviceIdFinalValue) + " - MQTT reconnect", (bool) atoi(mqttRetainValue),atoi(mqttQoSValue));
-      }
-      connectMqtt();
-    }
-  }
   if (needReset){
     Serial.println("Rebooting after 1 second.");
-    if (atoi(enableMqttDebugValue) == 1) {
-      mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Rebooting after 1 second..." , (bool) atoi(mqttRetainValue), atoi(mqttQoSValue))
-    ;}
-    
     iotWebConf.delay(1000);
     ESP.restart();
   }
-
-
-  if(!String(deviceIdFinalValue).equals("empty") && !String(deviceIdFinalValue).equals("")){
-    if (iotWebConf.getState() == iotwebconf::OnLine) {
-      if ( atoi(updateIntervalValue) > 0 && millis() - lastPublish > (atoi(updateIntervalValue) * 1000) ) { 
-        Serial.println("Keep Alive interval elapsed. Automatically publishing...");
-        if (atoi(enableMqttDebugValue) == 1) {
-          mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - ["+"] - Keep Alive interval elapsed. Automatically publishing...", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
-        }
-        publicaEstados();
-        lastPublish = millis();
-      }
-    }
-    else{
-      if (DSCBegined){
-        dsc.stop();
-        DSCBegined = false;
-        Serial.println("DSC Keybus Interface stoped.");
-        // ESTO NO PORQU NO ESTA CONECTADO: if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, deviceID + " DSC Keybus Interface stoped.", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
-      }
-    }
-
-    if (DSCBegined){
-      doDSC();
-      if (activePartition != dsc.writePartition){
-        activePartition = dsc.writePartition;
-        mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition), true, atoi(mqttQoSValue));
-      }      
-    }
-  }
 }  
 
-/**
- * Handle web requests to "/" path.
- */
 void handleRoot(){
   if (iotWebConf.handleCaptivePortal()){
     return;
   }
   String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
-  s += "<title>Coiaca: IoT Device Configuration</title></head><body><center>";
+  s += "<title>Coiaca: IoT Device Software Update</title></head><body><center>";
   s += FPSTR(CUSTOMHTML_BODY_INNER);
-  s += "<br /><br />Device ID: <b>";
-  s += String(deviceIdFinalValue);
+  s += "<br /><br />The Software update is on going<b>";
   s += "</b><br /><br />";
-  s += "<a href='config'>Config</a><br />";
+  s += "<br /><br />Please Wait and goback to the Previuos View<b>";
   s += "</center></body></html>\n";
   server.send(200, "text/html; charset=UTF-8", s);
 }
 
 void wifiConnected(){
-  Serial.println("DeviceId identified: " +String(deviceIdFinalValue));
-  if(String(deviceIdFinalValue).equals("empty") || String(deviceIdFinalValue).equals("") 
-      || !(String(deviceIdFinalValue).startsWith("Coiaca-DSC01"))){
-    contPrimerINgreso=1;
-    long randNumber= random(1000,9999);
-    String val="myUsuario-"+String(randNumber);
-    strncpy( clientIDrnd, val.c_str(), val.length());
-
-    Serial.println("Starting register Process: "+val);
-    String deviceConfigURLResp= "Deviceconfig/"+val+"/response";
-    mqttDeviceConfigResponseValue=String(deviceConfigURLResp).c_str();
-    String deviceConfigURLReq="Deviceconfig/"+val;
-    mqttDeviceConfigValue= String(deviceConfigURLReq).c_str();
-    needMqttConnect = true;
-  }else{
     Serial.println("Device Register: "+String(deviceIdFinalValue));
-    needMqttConnect = true;
-    dsc.begin();
-    DSCBegined = true;
-    activePartition = dsc.writePartition;
-    mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition), true, atoi(mqttQoSValue)); 
-    Serial.println("Active partition sended: "+String(activePartition));
-  }
 }
 
 void configSaved(){
   Serial.println("Configuration updated.");
-  if (atoi(enableMqttDebugValue) == 1) {
-    mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Configuration updated.", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
-  }
   needReset = true;
 }
 
 bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper){
   bool valid = true;
-  //email validation
-  String email = webRequestWrapper->arg(emailParam.getId());
-  String emailconfirm= webRequestWrapper->arg(emailConfirmParam.getId());
-  if (!email.equals(emailconfirm)){
-    emailParam.errorMessage = "The email address is not the same";
-    emailConfirmParam.errorMessage = "The email address is not the same";
-    valid = false;
-  }
-
-  //password validation
-  String userpass = webRequestWrapper->arg(passwordUserParam.getId());
-  String userpassconfirm= webRequestWrapper->arg(passwordUserConfirmParam.getId());
-  if (!userpass.equals(userpassconfirm)){
-    passwordUserParam.errorMessage = "The password is not the same";
-    passwordUserConfirmParam.errorMessage = "The password is not the same";
-    valid = false;
-  }
-
-  //ID validation
-  int l = webRequestWrapper->arg(deviceIDFinalParam.getId()).length();
-  if (l < 10)
-  {
-    Serial.println("Initial configuration of the Device");
-    memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
-    strncpy(deviceIdFinalValue, String("empty").c_str(), String("empty").length());
-
-    iotWebConf.setupUpdateServer(
-            [](const char *updatePath)
-            { httpUpdater.setup(&server, updatePath); },
-            [](const char *userName, char *password)
-            { httpUpdater.updateCredentials(userName, password); });
-  }
-
-
   return valid;
 }
