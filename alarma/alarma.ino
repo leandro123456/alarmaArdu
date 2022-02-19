@@ -2,7 +2,11 @@
 #include <IotWebConf.h>
 #include <IotWebConfUsing.h>
 #include <EEPROM.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
 #include <ESP8266HTTPUpdateServer.h>
+
+
 
 unsigned int localPort = 8888;
 const char thingName[] = "Coiaca-DSC01";  
@@ -17,9 +21,10 @@ const char wifiInitialApPassword[] = "12345678";
 
 // Servicios
 DNSServer dnsServer;
-ESP8266WebServer server(80);
 WiFiClient net;
-ESP8266HTTPUpdateServer httpUpdater;
+ESP8266WebServer server(80);
+
+const char* host = "http://localhost:8099/home/image";
 
 void wifiConnected();
 void configSaved();
@@ -188,11 +193,36 @@ void setup() {
   server.on("/", handleRoot);
   server.on("/config", []{ iotWebConf.handleConfig(); });
   server.onNotFound([](){ iotWebConf.handleNotFound(); });
+  server.begin();
+
+    for (uint8_t t = 4; t > 0; t--) {
+    Serial.printf("[SETUP] WAIT %d...\n", t);
+    Serial.flush();
+    delay(1000);
+  }
+}
+
+
+void update_started() {
+  Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished() {
+  Serial.println("CALLBACK:  HTTP update process finished");
+}
+
+void update_progress(int cur, int total) {
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err) {
+  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
 }
 
 
 void loop() {
   iotWebConf.doLoop();
+  
 
   if (needReset){
     Serial.println("Rebooting after 1 second.");
@@ -217,6 +247,42 @@ void handleRoot(){
 
 void wifiConnected(){
     Serial.println("Device Register: "+String(deviceIdFinalValue));
+    Serial.println("ESPACIO DISPONIBLE: "+ String(ESP.getFreeSketchSpace()));
+    
+    WiFiClient client;
+
+    // The line below is optional. It can be used to blink the LED on the board during flashing
+    // The LED will be on during download of one buffer of data from the network. The LED will
+    // be off during writing that buffer to flash
+    // On a good connection the LED should flash regularly. On a bad connection the LED will be
+    // on much longer than it will be off. Other pins than LED_BUILTIN may be used. The second
+    // value is used to put the LED on. If the LED is on with HIGH, that value should be passed
+    ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
+
+    // Add optional callback notifiers
+    ESPhttpUpdate.onStart(update_started);
+    ESPhttpUpdate.onEnd(update_finished);
+    ESPhttpUpdate.onProgress(update_progress);
+    ESPhttpUpdate.onError(update_error);
+
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client, "http://cdash.space:80/home/image");
+    // Or:
+    //t_httpUpdate_return ret = ESPhttpUpdate.update(client, "server", 80, "file.bin");
+
+    switch (ret) {
+      case HTTP_UPDATE_FAILED:
+        Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+        break;
+
+      case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("HTTP_UPDATE_NO_UPDATES");
+        break;
+
+      case HTTP_UPDATE_OK:
+        Serial.println("HTTP_UPDATE_OK");
+        break;
+    }
+    Serial.println("actualizo el software");  
 }
 
 void configSaved(){
