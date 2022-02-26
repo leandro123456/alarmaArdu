@@ -24,7 +24,7 @@ DNSServer dnsServer;
 WiFiClient net;
 ESP8266WebServer server(80);
 
-const char* host = "http://localhost:8099/home/image";
+const char* host = "http://device.coiaca.com/fwupdate/BRDSC01_latest.bin";
 
 void wifiConnected();
 void configSaved();
@@ -93,15 +93,15 @@ IotWebConfPasswordParameter passwordUserConfirmParam = IotWebConfPasswordParamet
 IotWebConfParameterGroup group5 =  IotWebConfParameterGroup("group5", "Alarm Configuration");
 IotWebConfTextParameter accessCodeParam = IotWebConfTextParameter("Access Code", "accessCode", accessCodeValue, NUMBER_LEN,"1234", "1..9999", "min='0' max='9999' step='1'");
 
-static char isSecureConectionVal[][STRING_LEN] = { "0", "1"};
-static char isSecureConectionNam[][STRING_LEN] = { "No", "Yes"};
+static char isSecureConectionVal[][STRING_LEN] = { "1", "0"};
+static char isSecureConectionNam[][STRING_LEN] = { "Yes", "No"};
 static char mqttRetVal[][STRING_LEN] = { "0", "1"};
 static char mqttRetNam[][STRING_LEN] = { "0", "1"};
 static char mqttQoSParamVal[][STRING_LEN] ={ "0", "1","2"};
 static char mqttQoSParamNam[][STRING_LEN] = { "0", "1","2"};  
 IotWebConfParameterGroup group2 =  IotWebConfParameterGroup("group2", "MQTT Config");
 IotWebConfTextParameter mqttServerParam = IotWebConfTextParameter("MQTT Server URL", "mqttServer", mqttServerValue, STRING_LEN, "mqtt.coiaca.com", "mqttURL", "mqtt.coiaca.com");
-IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port", "MQTTPort", mqttPortValue, NUMBER_LEN, "1883", "1..9999", "min='1' max='9999' step='1'");
+IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port", "MQTTPort", mqttPortValue, NUMBER_LEN, "8884", "1..9999", "min='1' max='9999' step='1'");
 IotWebConfSelectParameter isSecureConectionParam = IotWebConfSelectParameter("Is Secure Port?", "Is Secure Port", isSecureConectionValue, STRING_LEN, (char*)isSecureConectionVal, (char*)isSecureConectionNam, sizeof(isSecureConectionNam) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter mqttUserNameParam = IotWebConfTextParameter("MQTT user", "mqttUser", mqttUserNameValue, STRING_LEN, nullptr,"mqttusr",  nullptr);
 IotWebConfPasswordParameter mqttUserPasswordParam = IotWebConfPasswordParameter("MQTT password", "mqttPass", mqttUserPasswordValue, STRING_LEN, nullptr, "mqttpwd", nullptr);
@@ -134,6 +134,10 @@ IotWebConfTextParameter monitoringTopicParam = IotWebConfTextParameter("Monitori
 IotWebConfSelectParameter enableMqttDebugParam = IotWebConfSelectParameter("Enable MQTT Debug", "enableMqttDebug", enableMqttDebugValue, STRING_LEN,(char*)enableMqttDebugPVal, (char*)enableMqttDebugPNam, sizeof(enableMqttDebugPVal) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter MqttDebugTopicParam = IotWebConfTextParameter("MQTT Debug Topic", "MqttDebugTopic", MqttDebugTopicValue, STRING_LEN, nullptr,"RMgmt", nullptr);
 
+static char remoteUpateFirmwarePVal[][STRING_LEN] = { "0", "1"};
+static char remoteUpateFirmwarePNam[][STRING_LEN] = { "No", "Yes"};
+IotWebConfParameterGroup group6 =  IotWebConfParameterGroup("group6", "Remote Upate Firmware");
+IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Enable MQTT Debug", "enableMqttDebug", remoteUpateFirmware, STRING_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / STRING_LEN, STRING_LEN);
 
 void setup() {
   pinMode(13, FUNCTION_3);
@@ -147,9 +151,7 @@ void setup() {
   group1.addItem(&emailConfirmParam);
   group1.addItem(&passwordUserParam);
   group1.addItem(&passwordUserConfirmParam);
-
   group5.addItem(&accessCodeParam);
-
   group2.addItem(&mqttServerParam);
   group2.addItem(&mqttPortParam);
   group2.addItem(&isSecureConectionParam);
@@ -158,7 +160,6 @@ void setup() {
   group2.addItem(&mqttClientIDParam);
   group2.addItem(&mqttRetainParam);
   group2.addItem(&mqttQoSParam);
-  
   group3.addItem(&mqttStatusTopicParam);
   group3.addItem(&mqttBirthMessageParam);
   group3.addItem(&mqttLwtMessageParam);
@@ -171,12 +172,11 @@ void setup() {
   group3.addItem(&mqttCommandTopicParam);
   group3.addItem(&mqttKeepAliveTopicParam);
   group3.addItem(&updateIntervalParam);
-  
   group4.addItem(&enableMonitoringParam);
   group4.addItem(&monitoringTopicParam);
   group4.addItem(&enableMqttDebugParam);
   group4.addItem(&MqttDebugTopicParam);
-  group4.addItem(&deviceIDFinalParam);
+  group6.addItem(&remoteUpateFirmwareParam);
 
   iotWebConf.setStatusPin (STATUS_PIN); 
   iotWebConf.setConfigPin(CONFIG_PIN);
@@ -185,6 +185,8 @@ void setup() {
   iotWebConf.addParameterGroup(&group2);
   iotWebConf.addParameterGroup(&group3);
   iotWebConf.addParameterGroup(&group4);
+  iotWebConf.addParameterGroup(&group6);
+  iotWebConf.addHiddenParameter(&deviceIDFinalParam);
   iotWebConf.setFormValidator(&formValidator);
   iotWebConf.setWifiConnectionCallback(&wifiConnected);
   iotWebConf.setConfigSavedCallback(&configSaved);
@@ -194,12 +196,6 @@ void setup() {
   server.on("/config", []{ iotWebConf.handleConfig(); });
   server.onNotFound([](){ iotWebConf.handleNotFound(); });
   server.begin();
-
-    for (uint8_t t = 4; t > 0; t--) {
-    Serial.printf("[SETUP] WAIT %d...\n", t);
-    Serial.flush();
-    delay(1000);
-  }
 }
 
 
@@ -249,6 +245,12 @@ void wifiConnected(){
     Serial.println("Device Register: "+String(deviceIdFinalValue));
     Serial.println("ESPACIO DISPONIBLE: "+ String(ESP.getFreeSketchSpace()));
     
+    for (uint8_t t = 4; t > 0; t--) {
+    Serial.printf("[SETUP] WAIT %d...\n", t);
+    Serial.flush();
+    delay(1000);
+    }
+
     WiFiClient client;
 
     // The line below is optional. It can be used to blink the LED on the board during flashing
@@ -265,7 +267,7 @@ void wifiConnected(){
     ESPhttpUpdate.onProgress(update_progress);
     ESPhttpUpdate.onError(update_error);
 
-    t_httpUpdate_return ret = ESPhttpUpdate.update(client, "http://cdash.space:80/home/image");
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client,host);
     // Or:
     //t_httpUpdate_return ret = ESPhttpUpdate.update(client, "server", 80, "file.bin");
 
