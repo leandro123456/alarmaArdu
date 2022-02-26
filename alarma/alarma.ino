@@ -12,7 +12,7 @@
 
 unsigned int localPort = 8888;
 const char thingName[] = "Coiaca-DSC01";  
-const char wifiInitialApPassword[] = "12345678"; 
+const char wifiInitialApPassword[] = "wDJGtmE6Rj4Ft"; 
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
