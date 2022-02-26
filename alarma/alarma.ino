@@ -7,6 +7,8 @@
 #include <dscKeybusInterface.h>
 #include <EEPROM.h>
 #include <ESP8266HTTPUpdateServer.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
 
 unsigned int localPort = 8888;
 const char thingName[] = "Coiaca-DSC01";  
@@ -89,7 +91,8 @@ char monitoringTopicValue[STRING_LEN];
 char enableMqttDebugValue[NUMBER_LEN];
 char MqttDebugTopicValue[STRING_LEN];
 char isSecureConectionValue[NUMBER_LEN];
-//char remoteUpateFirmware[STRING_LEN];
+char remoteUpateFirmware[NUMBER_LEN];
+char updateFirmwareValue[STRING_LEN];
 
 IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
 
@@ -106,15 +109,15 @@ IotWebConfPasswordParameter passwordUserConfirmParam = IotWebConfPasswordParamet
 IotWebConfParameterGroup group5 =  IotWebConfParameterGroup("group5", "Alarm Configuration");
 IotWebConfTextParameter accessCodeParam = IotWebConfTextParameter("Access Code", "accessCode", accessCodeValue, NUMBER_LEN,"1234", "1..9999", "min='0' max='9999' step='1'");
 
-static char isSecureConectionVal[][STRING_LEN] = { "0", "1"};
-static char isSecureConectionNam[][STRING_LEN] = { "No", "Yes"};
+static char isSecureConectionVal[][STRING_LEN] = { "1", "0"};
+static char isSecureConectionNam[][STRING_LEN] = { "Yes", "No"};
 static char mqttRetVal[][STRING_LEN] = { "0", "1"};
 static char mqttRetNam[][STRING_LEN] = { "0", "1"};
 static char mqttQoSParamVal[][STRING_LEN] ={ "0", "1","2"};
 static char mqttQoSParamNam[][STRING_LEN] = { "0", "1","2"};  
 IotWebConfParameterGroup group2 =  IotWebConfParameterGroup("group2", "MQTT Config");
 IotWebConfTextParameter mqttServerParam = IotWebConfTextParameter("MQTT Server URL", "mqttServer", mqttServerValue, STRING_LEN, "mqtt.coiaca.com", "mqttURL", "mqtt.coiaca.com");
-IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port", "MQTTPort", mqttPortValue, NUMBER_LEN, "1883", "1..9999", "min='1' max='9999' step='1'");
+IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port", "MQTTPort", mqttPortValue, NUMBER_LEN, "8884", "1..9999", "min='1' max='9999' step='1'");
 IotWebConfSelectParameter isSecureConectionParam = IotWebConfSelectParameter("Is Secure Port?", "Is Secure Port", isSecureConectionValue, STRING_LEN, (char*)isSecureConectionVal, (char*)isSecureConectionNam, sizeof(isSecureConectionNam) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter mqttUserNameParam = IotWebConfTextParameter("MQTT user", "mqttUser", mqttUserNameValue, STRING_LEN, nullptr,"mqttusr",  nullptr);
 IotWebConfPasswordParameter mqttUserPasswordParam = IotWebConfPasswordParameter("MQTT password", "mqttPass", mqttUserPasswordValue, STRING_LEN, nullptr, "mqttpwd", nullptr);
@@ -147,6 +150,12 @@ IotWebConfTextParameter monitoringTopicParam = IotWebConfTextParameter("Monitori
 IotWebConfSelectParameter enableMqttDebugParam = IotWebConfSelectParameter("Enable MQTT Debug", "enableMqttDebug", enableMqttDebugValue, STRING_LEN,(char*)enableMqttDebugPVal, (char*)enableMqttDebugPNam, sizeof(enableMqttDebugPVal) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter MqttDebugTopicParam = IotWebConfTextParameter("MQTT Debug Topic", "MqttDebugTopic", MqttDebugTopicValue, STRING_LEN, nullptr,"RMgmt", nullptr);
 
+static char remoteUpateFirmwarePVal[][STRING_LEN] = { "0", "1"};
+static char remoteUpateFirmwarePNam[][STRING_LEN] = { "No", "Yes"};
+IotWebConfParameterGroup group6 =  IotWebConfParameterGroup("group6", "Remote Update Firmware");
+IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Enable Remote Update Firmware", "RemoteUpdateFirmware", remoteUpateFirmware, STRING_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / STRING_LEN, STRING_LEN);
+IotWebConfTextParameter updateFirmwareValueParam = IotWebConfTextParameter("Update Firmware URL", "upateFirmware", updateFirmwareValue, STRING_LEN, "http://device.coiaca.com/fwupdate/BRDSC01_1_0_0i.bin",nullptr, "http://device.coiaca.com/fwupdate/BRDSC01_1_0_0i.bin");
+
 
 void setup() {
   pinMode(13, FUNCTION_3);
@@ -160,9 +169,7 @@ void setup() {
   group1.addItem(&emailConfirmParam);
   group1.addItem(&passwordUserParam);
   group1.addItem(&passwordUserConfirmParam);
-
   group5.addItem(&accessCodeParam);
-
   group2.addItem(&mqttServerParam);
   group2.addItem(&mqttPortParam);
   group2.addItem(&isSecureConectionParam);
@@ -171,7 +178,6 @@ void setup() {
   group2.addItem(&mqttClientIDParam);
   group2.addItem(&mqttRetainParam);
   group2.addItem(&mqttQoSParam);
-  
   group3.addItem(&mqttStatusTopicParam);
   group3.addItem(&mqttBirthMessageParam);
   group3.addItem(&mqttLwtMessageParam);
@@ -184,12 +190,12 @@ void setup() {
   group3.addItem(&mqttCommandTopicParam);
   group3.addItem(&mqttKeepAliveTopicParam);
   group3.addItem(&updateIntervalParam);
-  
   group4.addItem(&enableMonitoringParam);
   group4.addItem(&monitoringTopicParam);
   group4.addItem(&enableMqttDebugParam);
   group4.addItem(&MqttDebugTopicParam);
-  group4.addItem(&deviceIDFinalParam);
+  group6.addItem(&remoteUpateFirmwareParam);
+  group6.addItem(&updateFirmwareValueParam);
 
   iotWebConf.setStatusPin (STATUS_PIN); 
   iotWebConf.setConfigPin(CONFIG_PIN);
@@ -198,6 +204,8 @@ void setup() {
   iotWebConf.addParameterGroup(&group2);
   iotWebConf.addParameterGroup(&group3);
   iotWebConf.addParameterGroup(&group4);
+  iotWebConf.addParameterGroup(&group6);
+  iotWebConf.addHiddenParameter(&deviceIDFinalParam);
   iotWebConf.setFormValidator(&formValidator);
   iotWebConf.setWifiConnectionCallback(&wifiConnected);
   iotWebConf.setConfigSavedCallback(&configSaved);
@@ -207,15 +215,12 @@ void setup() {
   server.on("/config", []{ iotWebConf.handleConfig(); });
   server.onNotFound([](){ iotWebConf.handleNotFound(); });
 
-
-  // Conexion mqtt para la funcionalidad principal
   if (atoi(isSecureConectionValue) != 1) {
       Serial.println("Conection insecure");
       mqttClient.begin(mqttServerValue, atoi(mqttPortValue), net);
       mqttClient.onMessage(mqttMessageReceived);
   }
 
-  // Conexion mqtt para la Configuracion remota
   if (atoi(isSecureConectionValue) == 1)  {  
     Serial.println("Conection secure");
     mqttClient.begin(mqttServerValue, atoi(mqttPortValue), net2);
@@ -258,7 +263,7 @@ void loop() {
       if ( atoi(updateIntervalValue) > 0 && millis() - lastPublish > (atoi(updateIntervalValue) * 1000) ) { 
         Serial.println("Keep Alive interval elapsed. Automatically publishing...");
         if (atoi(enableMqttDebugValue) == 1) {
-          mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - ["+"] - Keep Alive interval elapsed. Automatically publishing...", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
+          mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - ["+"] - Keep Alive interval elapsed. Automatically publishing ", atoi(mqttRetainValue), atoi(mqttQoSValue));
         }
         publicaEstados();
         lastPublish = millis();
@@ -269,7 +274,6 @@ void loop() {
         dsc.stop();
         DSCBegined = false;
         Serial.println("DSC Keybus Interface stoped.");
-        // ESTO NO PORQU NO ESTA CONECTADO: if (atoi(enableMqttDebugValue) == 1) {mqttClient.publish(MqttDebugTopicValue, deviceID + " DSC Keybus Interface stoped.", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
       }
     }
 
@@ -303,6 +307,39 @@ void handleRoot(){
 
 void wifiConnected(){
   Serial.println("DeviceId identified: " +String(deviceIdFinalValue));
+
+  if (atoi(remoteUpateFirmware) == 1) {
+     for (uint8_t t = 4; t > 0; t--) {
+    Serial.printf("[SETUP] WAIT %d...\n", t);
+    Serial.flush();
+    delay(1000);
+    }
+
+    WiFiClient client;
+    ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
+    ESPhttpUpdate.onStart(update_started);
+    ESPhttpUpdate.onEnd(update_finished);
+    ESPhttpUpdate.onProgress(update_progress);
+    ESPhttpUpdate.onError(update_error);
+
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client,updateFirmwareValue);
+
+    switch (ret) {
+      case HTTP_UPDATE_FAILED:
+        Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+        break;
+
+      case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("HTTP_UPDATE_NO_UPDATES");
+        break;
+
+      case HTTP_UPDATE_OK:
+        Serial.println("HTTP_UPDATE_OK");
+        break;
+    }
+    Serial.println("actualizo el software");  
+  }
+
   if(String(deviceIdFinalValue).equals("empty") || String(deviceIdFinalValue).equals("") 
       || !(String(deviceIdFinalValue).startsWith("Coiaca-DSC01"))){
     contPrimerINgreso=1;
@@ -325,6 +362,7 @@ void wifiConnected(){
     mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition), true, atoi(mqttQoSValue)); 
     Serial.println("Active partition sended: "+String(activePartition));
   }
+
 }
 
 void configSaved(){
@@ -372,4 +410,20 @@ bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper){
 
 
   return valid;
+}
+
+void update_started() {
+  Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished() {
+  Serial.println("CALLBACK:  HTTP update process finished");
+}
+
+void update_progress(int cur, int total) {
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err) {
+  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
 }

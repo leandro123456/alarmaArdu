@@ -71,14 +71,7 @@ boolean connectMqttOptions(){
     return result;
   }
   else{
-  //  Serial.println((String)"mqttClientID: " + mqttClientIDValue);
-  //  Serial.println((String)"mqttUserNameValue: " + mqttUserNameValue);
-  //  Serial.println((String)"mqttUserPasswordValue: " + mqttUserPasswordValue);
-    if (mqttUserPasswordValue[0] != '\0') {
       result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue, mqttUserPasswordValue);
-    }else{
-      result =false;
-    }
     return result;
   }
 }
