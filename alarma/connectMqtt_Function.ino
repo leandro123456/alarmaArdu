@@ -22,11 +22,12 @@ boolean connectMqtt() {
     mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Connected to MQTT server!", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));}
   /* --------------- mqttDebug: --------- */
   
-  Serial.println("DeviceID FINAL VALUE: -"+ String(deviceIdFinalValue)+"-");
+  //Serial.println("DeviceID: "+ String(deviceIdFinalValue));
   if(contPrimerINgreso==1 &&(String(deviceIdFinalValue).startsWith("empty") || String(deviceIdFinalValue).equals(""))){
+  //if(String(deviceIdFinalValue).startsWith("empty") || String(deviceIdFinalValue).equals("")){
     PublicarConfiguracionInicial();
     mqttClient.subscribe(mqttDeviceConfigResponseValue);
-    Serial.println((String) "Initial Subcribed to: " + mqttDeviceConfigResponseValue);
+    Serial.println("First Initial Subcribed to: " + (String)mqttDeviceConfigResponseValue);
     contPrimerINgreso=2;
   }
   else{
@@ -66,12 +67,16 @@ boolean connectMqttOptions(){
   net2.setInsecure();
   mqttClient.setWill(mqttStatusTopicValue, mqttLwtMessageValue, true, 0);
   if(String(deviceIdFinalValue).equals("empty") || String(deviceIdFinalValue).equals("")){
-    Serial.println((String)"mqttClientID INITIAL: " + String(clientIDrnd));
+    //Serial.println((String)"mqttClientID INITIAL: " + String(clientIDrnd));
     result = mqttClient.connect(clientIDrnd, "mqttusr", "mqttpwd");
+    Serial.println("resulttado1 coneccion: "+ (String)result);
     return result;
   }
   else{
-      result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue, mqttUserPasswordValue);
+    Serial.println((String)"mqttClientID: " + String(mqttClientIDValue));
+    Serial.println((String)"mqtt USER: " + String(mqttUserNameValue));
+    Serial.println((String)"mqtt PASS: " + String(mqttUserPasswordValue));
+    result = mqttClient.connect(mqttClientIDValue, mqttUserNameValue, mqttUserPasswordValue);
     return result;
   }
 }

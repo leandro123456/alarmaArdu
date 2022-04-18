@@ -1,9 +1,10 @@
 void PublicarConfiguracionInicial(){
   if(mqttClient.connected()){
-    mqttClient.publish(mqttDeviceConfigValue, "{\"mail\":\""+ (String)emailValue + "\",\"pass\":\"" + (String)passwordFinalValue + "\"}", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); 
+    Serial.println("Publicar configuracion inicial");
+    mqttClient.publish(mqttDeviceConfigValue, "{\"mail\":\""+ (String)emailValue + "\",\"pwd\":\"" + (String)passwordFinalValue + "\",\"NdvHATypDvid\":\"" + (String)isNewDeviceValue + "-" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+(String)deviceIdFinalValue+"\"}", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); 
     /// --------------- SerialDebug: ----------
     Serial.println("Publishing Initial data to register...");
-    Serial.println("Message sent to initial register. Topic: " + (String)mqttDeviceConfigValue + "{\"mail\":\""+ (String)emailValue + ",\"userPassword\":" + (String)passwordFinalValue + "}" );
+    Serial.println("Message sent to initial register. Topic: " + (String)mqttDeviceConfigValue + "{\"mail\":\""+ (String)emailValue + "\",\"NdvHATypDvid\":\"" + (String)isNewDeviceValue + "-" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+(String)deviceIdFinalValue+"\"}" );
     // --------------- mqttDebug: ---------
     if (atoi(enableMqttDebugValue) == 1) {
       mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttDeviceConfigValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) +"\"}", false, atoi(mqttQoSValue));
@@ -19,11 +20,21 @@ void publicaEstados(){
     Serial.println("Devide ID: "+ String(deviceIdFinalValue));
     mqttClient.publish(mqttKeepAliveTopicValue, "{\"deviceID\":\"" + String(deviceIdFinalValue) +"\",\"DSC\":" + dsc.keybusConnected + ",\"MQTT\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}", (bool) atoi(mqttRetainValue), atoi(mqttQoSValue)); 
     /// --------------- SerialDebug: ----------
-    Serial.println("Publishing data...");
     Serial.println("Message sent. Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) + "\"}" );
     // --------------- mqttDebug: ---------
     if (atoi(enableMqttDebugValue) == 1) {
       mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) +"\"}", false, atoi(mqttQoSValue));
+    }
+
+    if(hanosended){
+      Serial.println("##################################################################");
+      Serial.println("##################################################################");
+      Serial.println("##################################################################");
+      //activePartition = dsc.writePartition;
+      mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition), true, atoi(mqttQoSValue));             
+      Serial.println("Active partition sended: "+String(activePartition)+ " to: "+ String(mqttActivePartitionTopicValue));
+      SendHaConfiguration();
+      hanosended=false;
     }
   } else {
     // --------------- SerialDebug: ----------
@@ -135,5 +146,86 @@ void publishMessage(String sourceTopic, byte partition) {
     case 0xF8: mqttClient.publish(sourceTopic, "Keypad programming",false, atoi(mqttQoSValue)); break;
     case 0xFA: mqttClient.publish(sourceTopic, "Input: 6 digits"); break;
     default: return;
+  }
+}
+
+void SendHaConfiguration(){
+
+  if(mqttClient.connected()){
+  Serial.println("HomeAssistant start configuration");
+  //alarm-control-panel
+  char HomeAssitanConfTopic[STRING_LEN];
+  String deviceID=String(deviceIdFinalValue);
+  String HomeAssitanValue= String(defaultHAPrefixValue)+"/alarm_control_panel/"+deviceID+"/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  Serial.println("HomeAssistant TOPICO: "+ String(HomeAssitanConfTopic));
+  //Serial.println("HomeAssistant MENSAJE: " + String("{\"~\":\""+ deviceID + "\",\"name\":\"Security Partition 1\",\"cmd_t\":\"~/Set\",\"stat_t\":\"~/Partition1\",\"avty_t\":\"~/Status\",\"pl_disarm\":\"1D\",\"pl_arm_home\":\"1S\",\"pl_arm_away\":\"1A\",\"pl_arm_nite\":\"1N\"}"));
+  
+  //DynamicJsonDocument doc(2048);
+  //JsonObject obj = doc.to<JsonObject>();
+  //obj["~"] = deviceID;
+  //obj["name"] = "Security Partition 1";
+  //obj["cmd_t"] = "~/Set";
+  //obj["stat_t"] = "~/Partition1";
+  //obj["avty_t"] = "~/Status";
+  //obj["pl_disarm"] = "1D";
+  //obj["pl_arm_home"] = "1S";
+  //obj["pl_arm_away"] = "1A";
+  //obj["pl_arm_nite"] = "1N";
+
+  //char out[2048];
+  //int b =serializeJson(obj, out);
+
+  DynamicJsonDocument doc(500);
+  String RConfCommandResult;
+  //doc["~"] = deviceID;
+  doc["name"] = "Security_Partition_1";
+  doc["cmd_t"] = deviceID+"/Set";
+  doc["pl_disarm"] = "1D";
+  //serializeJson(doc, RConfCommandResult);
+  char buffer[256];
+  serializeJson(doc, buffer);
+
+  mqttClient.publish(HomeAssitanConfTopic, buffer, true, 0);
+  Serial.println("ya lo envie BIEN!!!!!!");
+
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Security Partition 1\",\"cmd_t\":\"~/Set\",\"stat_t\":\"~/Partition1\",\"avty_t\":\"~/Status\",\"pl_disarm\":\"1D\",\"pl_arm_home\":\"1S\",\"pl_arm_away\":\"1A\",\"pl_arm_nite\":\"1N\"}", true, atoi(mqttQoSValue)); 
+  //Wifi-sensor
+  //HomeAssitanValue=String(defaultHAPrefixValue)+"/sensor/"+deviceID+"/config";
+  //memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  //strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Wifi Alarm\",\"dev_cla\":\"signal_strength\",\"stat_t\":\"~/keepAlive\",\"unit_of_meas\":\"dBm\",\"val_tpl\":\"{{value_json.dBm}}\",\"avty_t\":\"~/Status\",\"ic\":\"mdi:shield\"}", true, atoi(mqttQoSValue)); 
+  //Trouble
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Trouble/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Security Trouble\",\"dev_cla\":\"problem\",\"stat_t\":\"~/Trouble\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  //Zone1
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Z1/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Zone 1\",\"dev_cla\":\"door\",\"stat_t\":\"~/Zone1\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  //Zone2
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Z2/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Zone 2\",\"dev_cla\":\"window\",\"stat_t\":\"~/Zone2\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  //Zone3
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Z3/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Zone 3\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone3\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  //Zone4
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Z4/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Zone 4\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone4\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  //Zone5
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Z5/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Zone 5\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone5\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  //Zone6
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Z6/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Zone 6\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone6\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  //Zone7
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Z7/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Zone 7\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone7\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  //Zone8
+  //HomeAssitanConfTopic=(String)defaultHAPrefixValue+"/binary_sensor/"+deviceID+"-Z8/config";
+  //mqttClient.publish(HomeAssitanConfTopic, "{\"~\":\""+ deviceID + "\",\"name\":\"Zone 8\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone8\",\"pl_on\":\"1\",\"pl_off\":\"2\"}", (bool) 1, atoi(mqttQoSValue));
+  Serial.println("HomeAssistant configuration sent");
+  }
+  else{
+    Serial.println("El cliente no esta conectado para publicar el mensaje!!!!!!!!!!!!!!!!");
   }
 }

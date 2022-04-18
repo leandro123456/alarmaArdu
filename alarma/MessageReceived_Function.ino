@@ -1,34 +1,38 @@
 
 void mqttMessageReceived(String &topic, String &payload){
-  // --------------- SerialDebug: ----------
-  Serial.println("llego el mensaje!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-  Serial.println("Message received: " + String(topic) + " - ");
-  Serial.println("Payload: "+ String(payload));
-  // --------------- mqttDebug: --------- 
   if (atoi(enableMqttDebugValue) == 1) {
     mqttClient.publish(MqttDebugTopicValue, String(deviceIdFinalValue) + " - Message received: Topic: " + topic + " Payload: " + payload, (bool) atoi(mqttRetainValue), atoi(mqttQoSValue));
   }
 
+  Serial.println(mqttDeviceConfigResponseValue);
   if(topic==mqttDeviceConfigResponseValue){
-    Serial.println("encontro el topico para finalizar el registro de un nuevo usuario!!");
+    Serial.print("Finalizacion registro - payload: ");
     Serial.println(payload);
     StaticJsonDocument<500> jsonBuffer;  // estaba en 300 pero lo subo a 500 porque no entraban los comments
 
     deserializeJson(jsonBuffer, payload);
     String deviceIdObtenido = jsonBuffer["clt"];
-    String mqttPasswordObtenido = jsonBuffer["mqttpdw"];
+    String mqttCred = jsonBuffer["mqtt"];
+    if(deviceIdObtenido.equals("wrong-password")){
+      correctPassword = false;
+      return;
+    }
 
-    Serial.println("deviceId obtenido: "+ deviceIdObtenido);
-    Serial.println("Password obtenido: "+ mqttPasswordObtenido);
+    Serial.println("DeviceID es: "+ deviceIdObtenido);
+    Serial.println("mqtt credenciales: "+ mqttCred);
+    int mqttSeparador= mqttCred.indexOf('-');
+    String mqttUserObtenido = mqttCred.substring(0,mqttSeparador);
+    String mqttPasswordObtenido = mqttCred.substring(mqttSeparador+1);
+    Serial.println("mqttUser obtenido: "+ mqttUserObtenido);
+    Serial.println("mqttPassword obtenido: "+ mqttPasswordObtenido);
+
     
     //Configuraciones
-    Serial.println("*******************  Configuracion FINAL del dispositivo");
     memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
     strncpy(deviceIdFinalValue, String(deviceIdObtenido).c_str(), String(deviceIdObtenido).length());
-    Serial.println(">>>>>>>>>>>>>>>>>>>> El valor de la respuesta ID: -"+ String(deviceIdFinalValue)+"-fin");
 
     memset(mqttUserNameValue, 0, sizeof mqttUserNameValue);
-    strncpy(mqttUserNameValue, String(deviceIdObtenido).c_str(), String(deviceIdObtenido).length());
+    strncpy(mqttUserNameValue, String(mqttUserObtenido).c_str(), String(mqttUserObtenido).length());
 
     memset(mqttUserPasswordValue, 0, sizeof mqttUserPasswordValue);
     strncpy(mqttUserPasswordValue, String(mqttPasswordObtenido).c_str(), String(mqttPasswordObtenido).length());
@@ -66,18 +70,14 @@ void mqttMessageReceived(String &topic, String &payload){
 
     memset(MqttDebugTopicValue, 0, sizeof MqttDebugTopicValue);
     strncpy(MqttDebugTopicValue, String("RMgmt/"+deviceIdObtenido+"/debug").c_str(), String("RMgmt/"+deviceIdObtenido+"/debug").length());
-   
+  
 
     iotWebConf.setupUpdateServer(
-            [](const char *updatePath)
-            { httpUpdater.setup(&server, updatePath); },
-            [](const char *userName, char *password)
-            { httpUpdater.updateCredentials(userName, password); });
-
+      [](const char *updatePath)
+      { httpUpdater.setup(&server, updatePath); },
+      [](const char *userName, char *password)
+      { httpUpdater.updateCredentials(userName, password); });
     iotWebConf.saveConfig();
-
-    Serial.println(">>>>>>>>>>>>>>>>> El valor de la respuesta ID2: -"+ String(deviceIdFinalValue)+"-fin");
-
 
   }
   else{
