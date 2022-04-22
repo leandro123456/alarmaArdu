@@ -252,7 +252,7 @@ void loop() {
   if (needMqttConnect){
     if (connectMqtt()){
       needMqttConnect = false;
-	}
+    }
   }
     else{
       if ((iotWebConf.getState() == iotwebconf::OnLine) && (!mqttClient.connected())){
@@ -271,7 +271,7 @@ void loop() {
       mqttClient.publish(MqttDebugTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue));}
 
      iotWebConf.delay(1000);
-     ESP.restart();
+    ESP.restart();
   }
   if(correctPassword){
     if(!String(deviceIdFinalValue).equals("empty") && !String(deviceIdFinalValue).equals("")){
