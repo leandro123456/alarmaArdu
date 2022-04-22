@@ -88,7 +88,7 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
     if (topico  == mqttCommandTopicValue){
 
     String partitionN = String((char *)payload).substring(0,1);
-    String acTion = String((char *)payload).substring(1,2);    
+    String acTion = String((char *)payload).substring(1);    
     Serial.println("partitionN: " + partitionN + " - acTion: " + acTion);
 
       byte partition = 0;
