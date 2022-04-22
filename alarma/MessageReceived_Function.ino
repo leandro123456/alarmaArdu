@@ -84,86 +84,34 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
   else{
     // Actualiza con el tiempo estado publicado
     if (topico == mqttStatusTopicValue) lastSentStatus = String((char *)payload);
-
+    Serial.println("va a comparar si son guales el tipico recibido: "+ String(topic) +": y el parametro del topico: "+ String(mqttCommandTopicValue));
     if (topico  == mqttCommandTopicValue){
 
     String partitionN = String((char *)payload).substring(0,1);
     String acTion = String((char *)payload).substring(1);    
     Serial.println("partitionN: " + partitionN + " - acTion: " + acTion);
 
-      byte partition = 0;
-      byte payloadIndex = 0;
-
-      // Checks if a partition number 1-8 has been sent and sets the second character as the payload
-      if (payload[0] >= 0x31 && payload[0] <= 0x38) {
-        partition = payload[0] - 49;
-        payloadIndex = 1;
-      }
-
-      if (payload[payloadIndex] == 'P') {
-        dsc.write('p');
-      }
-
-
-      // Resets status if attempting to change the armed mode while armed or not ready
-      if (payload[payloadIndex] != 'D' && !dsc.ready[partition]) {
-        dsc.armedChanged[partition] = true;
-        dsc.statusChanged = true;
-        return;
-      }
-
-      // Arm stay
-      if (payload[payloadIndex] == 'S' && !dsc.armed[partition] && !dsc.exitDelay[partition]) {
-        dsc.writePartition = partition + 1;         // Sets writes to the partition number
-        dsc.write('s');                             // Virtual keypad arm stay
-      }
-
-      // Arm away
-      else if (payload[payloadIndex] == 'A' && !dsc.armed[partition] && !dsc.exitDelay[partition]) {
-        dsc.writePartition = partition + 1;         // Sets writes to the partition number
-        dsc.write('w');                             // Virtual keypad arm away
-      }
-
-      // Arm night
-      else if (payload[payloadIndex] == 'N' && !dsc.armed[partition] && !dsc.exitDelay[partition]) {
-        dsc.writePartition = partition + 1;         // Sets writes to the partition number
-        dsc.write('n');                             // Virtual keypad arm away
-      }
-
-      // Disarm
-      else if (payload[payloadIndex] == 'D' && (dsc.armed[partition] || dsc.exitDelay[partition] || dsc.alarm[partition])) {
-        dsc.writePartition = partition + 1;         // Sets writes to the partition number
-        dsc.write(accessCodeValue);
-      }
-
-
-
-
-
-
-
-
-//    if (partitionN >= "0" && partitionN <= "8" && (acTion == "S" || acTion == "A" || acTion == "D" ) ){
-//      Serial.println("Entro en acciones tipo de accion: "+ acTion);
+    if (partitionN >= "0" && partitionN <= "8" && (acTion == "S" || acTion == "A" || acTion == "D" ) ){
+      Serial.println("Entro en acciones tipo de accion: "+ acTion);
  
       // Arm stay
-//      if (acTion == "S" && !dsc.armed[partitionN.toInt()-1] && !dsc.exitDelay[partitionN.toInt()-1]) {
-//        Serial.println("tipo de accion: "+ acTion);
-//        controlDSC("arm_stay",partitionN.toInt());
-//      }
+      if (acTion == "S" && !dsc.armed[partitionN.toInt()-1] && !dsc.exitDelay[partitionN.toInt()-1]) {
+        Serial.println("tipo de accion: "+ acTion);
+        controlDSC("arm_stay",partitionN.toInt());
+      }
     
       // Arm away 
-//      else if (acTion == "A" && !dsc.armed[partitionN.toInt()-1] && !dsc.exitDelay[partitionN.toInt()-1]) {
-//        Serial.println("tipo de accion: "+ acTion);
-//        controlDSC("arm_away",partitionN.toInt());
-//      }
+      else if (acTion == "A" && !dsc.armed[partitionN.toInt()-1] && !dsc.exitDelay[partitionN.toInt()-1]) {
+        Serial.println("tipo de accion: "+ acTion);
+        controlDSC("arm_away",partitionN.toInt());
+      }
           
       // Disarm
-//      else if (acTion == "D" && (dsc.armed[partitionN.toInt()-1] || dsc.exitDelay[partitionN.toInt()-1])) {
-//        Serial.println("tipo de accion: "+ acTion);
-//        controlDSC("disarm",partitionN.toInt());
-//      }     
-//    }else {//Trarammiento no documentado de PINES 1(14) y 2(13)
+      else if (acTion == "D" && (dsc.armed[partitionN.toInt()-1] || dsc.exitDelay[partitionN.toInt()-1])) {
+        Serial.println("tipo de accion: "+ acTion);
+        controlDSC("disarm",partitionN.toInt());
+      }     
+    }else {//Trarammiento no documentado de PINES 1(14) y 2(13)
       if (String((char *)payload) == "P2H"){   //Pone el Pin2 en High
         digitalWrite(13,HIGH);
         //--------------- SerialDebug: --------- 
@@ -258,14 +206,13 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
 
       if (String((char *)payload) != "P2H" && String((char *)payload) != "P2L" && String((char *)payload) != "P1H" && String((char *)payload) != "P1L")
         dsc.write((char *)payload);  //Chequear por que no funciona con panic y con auxiliar    
-  //  }    
+    }    
   }
  }
 }
 
 
 void controlDSC(String coMMand, int targetPartition){
-  Serial.println("ENTRO AL CONTROL DSC!!!!!!!!!!!!!!");
   // Arm stay
   if (coMMand == "arm_stay") {
     dsc.writePartition = targetPartition;         // Sets writes to the partition number
