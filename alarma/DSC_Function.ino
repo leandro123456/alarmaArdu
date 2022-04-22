@@ -1,12 +1,12 @@
-void doDSC(){      
-  if (dsc.statusChanged) {  // Processes data only when a valid Keybus command has been read
+void doDSC(){
+ 
+  if (dsc.statusChanged) { // Checks if the security system status has changed
     dsc.statusChanged = false;  // Reset the status tracking flag
-    Serial.println("el status del DSC cambio***********");
 
     // If the Keybus data buffer is exceeded, the sketch is too busy to process all Keybus commands.  Call
-    // handlePanel() more often, or increase dscBufferSize in the library: src/dscKeybusInterface.h
+    // loop() more often, or increase dscBufferSize in the library: src/dscKeybusInterface.h
     if (dsc.bufferOverflow){
-      Serial.println("Keybus buffer overflow");
+      Serial.println(F("Keybus buffer overflow"));
       dsc.bufferOverflow = false;
     }
 
@@ -72,8 +72,6 @@ void doDSC(){
         if (dsc.armedChanged[partition]) dsc.armedChanged[partition] = false; 
         char publishTopic[strlen(mqttPartitionTopicValue) + 2]; // Appends the mqttPartitionTopic with the partition number
         appendPartition(mqttPartitionTopicValue, partition, publishTopic);  // Appends the mqttPartitionTopic with the partition number
-
-        Serial.println("cambio de estado: "+ String(dsc.armed[partition]));
 
         String msgtext1;
         if (dsc.armed[partition]) {
