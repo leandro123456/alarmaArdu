@@ -2,39 +2,42 @@ boolean connectMqtt() {
   unsigned long now = millis();
   if ((lastMqttConnectionAttempt + 1000) > now)
   {
-    // Do not repeat within 1 sec.
     return false;
   }
-   //--------------- SerialDebug: --------- 
+
   Serial.println("Connecting to MQTT server...");
   if (atoi(enableMqttDebugValue) == 1) {
-    String msgtext= deviceID + " - Connecting to MQTT server...";
+    String msgtext= String(deviceIdFinalValue) + " - Connecting to MQTT server...";
     mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
   }
 
   if (!connectMqttOptions()) {
-    Serial.println("entro a connectMqttOptions VA A a salir con false");
     lastMqttConnectionAttempt = now;
     return false;
   }
 
   //--------------- SerialDebug: --------- 
-  Serial.println("Connected MQTT server DEBUG");
-  // --------------- mqttDebug: --------- 
   if (atoi(enableMqttDebugValue) == 1) {
-    String msgtext= deviceID + " - Connected to MQTT server!";
+    String msgtext= String(deviceIdFinalValue) + " - Connected to MQTT server!";
     mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
   }
   
-  if (dsc.keybusConnected) {
-    mqttClient.publish(mqttStatusTopicValue, mqttBirthMessageValue, true);
-    lastSentStatus = String(mqttBirthMessageValue);
+  if(contPrimerINgreso==1 &&(String(deviceIdFinalValue).startsWith("empty") || String(deviceIdFinalValue).equals(""))){
+  //if(String(deviceIdFinalValue).startsWith("empty") || String(deviceIdFinalValue).equals("")){
+    PublicarConfiguracionInicial();
+    mqttClient.subscribe(mqttDeviceConfigResponseValue.c_str());
+    Serial.println("First Initial Subcribed to: " + (String)mqttDeviceConfigResponseValue);
+    contPrimerINgreso=2;
+  }
+  else{
+    if (dsc.keybusConnected) {
+      mqttClient.publish(mqttStatusTopicValue, mqttBirthMessageValue, true);
+      lastSentStatus = String(mqttBirthMessageValue);
 
-    //--------------- SerialDebug: --------- 
     Serial.println("Status message published: " + lastSentStatus);
     // --------------- mqttDebug: --------- 
     if (atoi(enableMqttDebugValue) == 1) {
-      String msgtext=deviceID + " - Status message published: " + lastSentStatus;
+      String msgtext=String(deviceIdFinalValue) + " - Status message published: " + lastSentStatus;
       mqttClient.publish(MqttDebugTopicValue, msgtext.c_str(), (bool) atoi(mqttRetainValue));}
   }else {
     mqttClient.publish(mqttStatusTopicValue, mqttNoDSCValue, true);
@@ -42,43 +45,44 @@ boolean connectMqtt() {
 
     //--------------- SerialDebug: --------- 
     Serial.println("Status message published: " + lastSentStatus);
-    // --------------- mqttDebug: --------- 
+
     if (atoi(enableMqttDebugValue) == 1) {
-      String msgtext= deviceID + " - Status message published: " + lastSentStatus;
+      String msgtext= String(deviceIdFinalValue) + " - Status message published: " + lastSentStatus;
       mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
     }
   }
-  // Para publicar estados iniciales
-  publicaEstados();
 
-  //Subcribe al topic de comando
-  mqttClient.subscribe(mqttCommandTopicValue);
-  
-  //--------------- SerialDebug: --------- 
-  Serial.println((String) "Subcribed to: " + mqttCommandTopicValue);
-  // --------------- mqttDebug: --------- 
-  if (atoi(enableMqttDebugValue) == 1) {
-    String msgtext= deviceID + " - Subcribed to: " + mqttCommandTopicValue;
+publicaEstados();
+    mqttClient.subscribe(mqttCommandTopicValue);
+    /* --------------- SerialDebug: --------- */
+    Serial.println((String) "Subcribed to: " + mqttCommandTopicValue);
+    /* --------------- mqttDebug: --------- */
+    if (atoi(enableMqttDebugValue) == 1) {
+    String msgtext= String(deviceIdFinalValue) + " - Subcribed to: " + mqttCommandTopicValue;
     mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool)atoi(mqttRetainValue));
   }
-
+  }
   return true;
 }
 
 
 
 boolean connectMqttOptions(){
-    Serial.println("START OPTION to MQTT server...");
-    boolean result;
-    net2.setInsecure();
-    Serial.println((String)"mqttClientID: " + mqttClientIDValue);
+  boolean result;
+  net2.setInsecure();
+  if(String(deviceIdFinalValue).equals("empty") || String(deviceIdFinalValue).equals("")){
+    Serial.println((String)"mqttClientID: " + clientIDrnd);
     Serial.println((String)"mqttUserNameValue: " + mqttUserNameValue);
     Serial.println((String)"mqttUserPasswordValue: " + mqttUserPasswordValue);
-    if (mqttUserPasswordValue[0] != '\0') {
-      result = mqttClient.connect(mqttClientIDValue,mqttUserNameValue, mqttUserPasswordValue,mqttStatusTopicValue,0,true,mqttLwtMessageValue);
-    }else{
-      result =false;
-    }
-    Serial.println("RESULTADO DE LA CONEXION: " + (String)result);
+    result = mqttClient.connect(clientIDrnd,mqttUserNameValue, mqttUserPasswordValue);
+    Serial.println("resulttado1 coneccion: "+ (String)result);
     return result;
+  }
+  else{
+    Serial.println((String)"mqttClientID: " + String(mqttClientIDValue));
+    Serial.println((String)"mqtt USER: " + String(mqttUserNameValue));
+    Serial.println((String)"mqtt PASS: " + String(mqttUserPasswordValue));
+    result = mqttClient.connect(mqttClientIDValue,mqttUserNameValue, mqttUserPasswordValue,mqttStatusTopicValue,0,true,mqttLwtMessageValue);
+    return result;
+  }
 }

@@ -1,23 +1,49 @@
-void publicaEstados(){
+void PublicarConfiguracionInicial(){
   if(mqttClient.connected()){
-
-    String msgtext="{\"deviceID\":\"" + deviceID +"\",\"DSC\":" + dsc.keybusConnected + ",\"MQTT\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}";
-    mqttClient.publish(mqttKeepAliveTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue)); 
+    Serial.println("Publicar configuracion inicial");
+    String msgtext="{\"mail\":\""+ (String)emailValue + "\",\"pwd\":\"" + (String)passwordFinalValue + "\",\"NdvHATypDvid\":\"" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+(String)deviceIdFinalValue+"\"}";
+    mqttClient.publish(mqttDeviceConfigValue.c_str(),msgtext.c_str() ,false); 
     /// --------------- SerialDebug: ----------
-    Serial.println("Publishing data...");
-    Serial.println("Message sent. Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + deviceID + "\"}" );
+    Serial.println("Publishing Initial data to register...");
+    Serial.println("Message sent to initial register. Topic: " + (String)mqttDeviceConfigValue + "{\"mail\":\""+ (String)emailValue + "\",\"NdvHATypDvid\":\"" + "-" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+(String)deviceIdFinalValue+"\"}" );
     // --------------- mqttDebug: ---------
     if (atoi(enableMqttDebugValue) == 1) {
-      msgtext=deviceID + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + deviceID +"\"}";
+      msgtext=String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttDeviceConfigValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) +"\"}";
+      mqttClient.publish(MqttDebugTopicValue, msgtext.c_str(), false);
+    }
+  }else{
+    // --------------- SerialDebug: ----------
+    Serial.println("FAIL: Data cound not be published because not connected to broker" );
+  }
+}
+
+void publicaEstados(){
+  if(mqttClient.connected()){
+    String msgtext="{\"deviceID\":\"" + String(deviceIdFinalValue) +"\",\"DSC\":" + dsc.keybusConnected + ",\"MQTT\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}";
+    mqttClient.publish(mqttKeepAliveTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue));  
+    /// --------------- SerialDebug: ----------
+    Serial.println("Message sent. Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) + "\"}" );
+    // --------------- mqttDebug: ---------
+    if (atoi(enableMqttDebugValue) == 1) {
+      msgtext= String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) +"\"}";
       mqttClient.publish(MqttDebugTopicValue,msgtext.c_str() , false);
     }
+
+    if(hanosended){
+      Serial.println("##################################################################");
+      Serial.println("##################################################################");
+      Serial.println("##################################################################");
+      mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition).c_str(), true);             
+      Serial.println("Active partition sended: "+String(activePartition)+ " to: "+ String(mqttActivePartitionTopicValue));
+      SendHaConfiguration();
+      hanosended=false;
+    }
   } else {
-    //--------------- SerialDebug: --------- 
-    Serial.println("Publishing data...");
-     Serial.println((String) "FAIL: Data cound not be published because not connected to broker" );
-    // --------------- mqttDebug: --------- 
+    //--------------- SerialDebug: ---------
+    Serial.println("FAIL: Data cound not be published because not connected to broker" );
+    // --------------- mqttDebug: ---------
     if (atoi(enableMqttDebugValue) == 1) {
-      String msgtext= deviceID + " - FAIL: Data cound not be published because not connected to broker: " + mqttServerValue;
+      String msgtext= String(deviceIdFinalValue) + " - FAIL: Data cound not be published because not connected to broker: " + mqttServerValue;
       mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), false);
     }
   }
@@ -124,5 +150,98 @@ void publishMessage(const char* sourceTopic, byte partition) {
     case 0xF8: mqttClient.publish(publishTopic, "Keypad programming", true); break;
     case 0xFA: mqttClient.publish(publishTopic, "Input: 6 digits"); break;
     default: return;
+  }
+}
+
+void SendHaConfiguration(){
+
+  if(mqttClient.connected()){
+  Serial.println("HomeAssistant start configuration");
+  //alarm-control-panel
+  char HomeAssitanConfTopic[STRING_LEN];
+  String deviceID=String(deviceIdFinalValue);
+  String HomeAssitanValue= String(defaultHAPrefixValue)+"/alarm_control_panel/"+deviceID+"/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  Serial.println("HomeAssistant TOPICO: "+ String(HomeAssitanConfTopic));
+  //general configuration alarm
+  DynamicJsonDocument obj(500);
+  char buffer[500];
+  obj["~"] = deviceID;
+  obj["name"] = "Security Partition 1";
+  obj["cmd_t"] = "~/cmd";
+  obj["stat_t"] = "~/Partition1";
+  obj["avty_t"] = "~/Status";
+  obj["pl_disarm"] = "1D";
+  obj["pl_arm_home"] = "1S";
+  obj["pl_arm_away"] = "1A";
+  obj["pl_arm_nite"] = "1N";
+  serializeJson(obj, buffer);
+  mqttClient.publish(HomeAssitanConfTopic, buffer, true);
+  //Wifi-sensor
+  DynamicJsonDocument obj1(500);
+  char buffer1[500];
+  obj1["~"] = deviceID;
+  obj1["name"] = "Wifi Alarm";
+  obj1["stat_t"] = "~/keepAlive";
+  obj1["avty_t"] = "~/Status";
+  obj1["dev_cla"] = "signal_strength";
+  obj1["unit_of_meas"] = "dBm";
+  obj1["val_tpl"] = "{{value_json.dBm}}";
+  obj1["ic"] = "mdi:shield";
+  serializeJson(obj1, buffer1);
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/sensor/"+deviceID+"/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());  
+  mqttClient.publish(HomeAssitanConfTopic, buffer1, true); 
+  //Trouble
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Trouble/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Security Trouble\",\"dev_cla\":\"problem\",\"stat_t\":\"~/Trouble\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  //Zone1
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Z1/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Zone 1\",\"dev_cla\":\"door\",\"stat_t\":\"~/Zone1\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  //Zone2
+    HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Z2/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Zone 2\",\"dev_cla\":\"window\",\"stat_t\":\"~/Zone2\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  //Zone3
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Z3/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Zone 3\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone3\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  //Zone4
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Z4/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Zone 4\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone4\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  //Zone5
+    HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Z5/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Zone 5\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone5\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  //Zone6
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Z6/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Zone 6\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone6\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  //Zone7
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Z7/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Zone 7\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone7\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  //Zone8
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Z8/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+  mqttClient.publish(HomeAssitanConfTopic, ("{\"~\":\""+ deviceID + "\",\"name\":\"Zone 8\",\"dev_cla\":\"motion\",\"stat_t\":\"~/Zone8\",\"pl_on\":\"1\",\"pl_off\":\"0\"}").c_str(), true);
+  Serial.println("HomeAssistant configuration sent");
+  }
+  else{
+    Serial.println("El cliente no esta conectado para publicar el mensaje!!!!!!!!!!!!!!!!");
   }
 }

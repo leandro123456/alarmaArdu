@@ -1,20 +1,18 @@
-void doDSC(){     
-  
-  if (dsc.statusChanged) {      // Checks if the security system status has changed
+void doDSC(){      
+  if (dsc.statusChanged) {  // Processes data only when a valid Keybus command has been read
     dsc.statusChanged = false;  // Reset the status tracking flag
-  
+    Serial.println("el status del DSC cambio***********");
+
     // If the Keybus data buffer is exceeded, the sketch is too busy to process all Keybus commands.  Call
-    // loop() more often, or increase dscBufferSize in the library: src/dscKeybusInterface.h
-    if (dsc.bufferOverflow) {
-      Serial.println(F("Keybus buffer overflow"));
+    // handlePanel() more often, or increase dscBufferSize in the library: src/dscKeybusInterface.h
+    if (dsc.bufferOverflow){
+      Serial.println("Keybus buffer overflow");
       dsc.bufferOverflow = false;
     }
-
 
     // Checks if the interface is connected to the Keybus
     if (dsc.keybusChanged) {
       dsc.keybusChanged = false;  // Resets the Keybus data status flag
-
       if (dsc.keybusConnected) {
         mqttClient.publish(mqttStatusTopicValue, mqttBirthMessageValue, true);
         lastSentStatus = String(mqttBirthMessageValue);
@@ -26,15 +24,14 @@ void doDSC(){
     }
       
     // Sends the access code when needed by the panel for arming
+    Serial.println("Sends the access code when needed by the panel for arming"+ String(dsc.accessCodePrompt));
     if (dsc.accessCodePrompt) {
       dsc.accessCodePrompt = false;
       dsc.write(accessCodeValue);
     }
 
-
     if (dsc.troubleChanged) {
       dsc.troubleChanged = false;  // Resets the trouble status flag
-
       if (dsc.trouble) 
         mqttClient.publish(mqttTroubleTopicValue, "1", (bool) atoi(mqttRetainValue));
       else 
@@ -49,7 +46,7 @@ void doDSC(){
 
         Serial.println("MONITORING: online Status published");
         if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext= deviceID + " MONITORING: Trouble status published";
+          String msgtext= String(deviceIdFinalValue) + " MONITORING: Trouble status published";
           mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
         }
       }
@@ -57,17 +54,17 @@ void doDSC(){
   
     // Publishes status per partition
     for (byte partition = 0; partition < dscPartitions; partition++) {
-
       // Skips processing if the partition is disabled or in installer programming
       if (dsc.disabled[partition]) continue;
 
       char partitionNumber[2];
       itoa(partition + 1, partitionNumber, 10);
       //strcat(publishTopic, partitionNumber);
-
+      char publishTopic[strlen(mqttPartitionTopicValue) + 2];
+      appendPartition(mqttPartitionTopicValue, partition, publishTopic);  // Appends the mqttPartitionTopic with the partition number
 
       // Publishes the partition status message
-      publishMessage(mqttPartitionTopicValue, partition);
+      publishMessage(((String)monitoringTopicValue +"/DetailPartition").c_str(), partition);
 
       // Publishes armed/disarmed status
       if (dsc.armedChanged[partition]) {
@@ -75,6 +72,8 @@ void doDSC(){
         if (dsc.armedChanged[partition]) dsc.armedChanged[partition] = false; 
         char publishTopic[strlen(mqttPartitionTopicValue) + 2]; // Appends the mqttPartitionTopic with the partition number
         appendPartition(mqttPartitionTopicValue, partition, publishTopic);  // Appends the mqttPartitionTopic with the partition number
+
+        Serial.println("cambio de estado: "+ String(dsc.armed[partition]));
 
         String msgtext1;
         if (dsc.armed[partition]) {
@@ -91,10 +90,10 @@ void doDSC(){
           if (atoi(enableMonitoringValue) > 1) {
             msgtext1=(String)monitoringTopicValue + "/Partition" + partitionNumber;
             if (dsc.armedAway[partition]){
-              sendMonitoring(msgtext1,"armed_away",deviceID +" MONITORING: ARMED_AWAY Status published for partition " + partitionNumber);
+              sendMonitoring(msgtext1,"armed_away",String(deviceIdFinalValue) +" MONITORING: ARMED_AWAY Status published for partition " + partitionNumber);
             }
             else if (dsc.armedStay[partition]){
-              sendMonitoring(msgtext1,"armed_home",deviceID + " MONITORING: ARMED_HOME status published for partition " + partitionNumber);
+              sendMonitoring(msgtext1,"armed_home",String(deviceIdFinalValue) + " MONITORING: ARMED_HOME status published for partition " + partitionNumber);
             }
           }
         }
@@ -108,7 +107,6 @@ void doDSC(){
       // Publishes exit delay status
       if (dsc.exitDelayChanged[partition]) {
         dsc.exitDelayChanged[partition] = false;  // Resets the exit delay status flag
-
         char publishTopic[strlen(mqttPartitionTopicValue) + 2];
         appendPartition(mqttPartitionTopicValue, partition, publishTopic);
 
@@ -119,10 +117,10 @@ void doDSC(){
         String topicoDeMensaje=(String)monitoringTopicValue + "/Partition" + partitionNumber;
         if (atoi(enableMonitoringValue) >1) {
           if (dsc.exitDelay[partition]){
-            sendMonitoring(topicoDeMensaje,"pending",deviceID + " MONITORING: PENDING status published for partition " + partitionNumber);
+            sendMonitoring(topicoDeMensaje,"pending",String(deviceIdFinalValue) + " MONITORING: PENDING status published for partition " + partitionNumber);
           }
           else if (!dsc.exitDelay[partition] && !dsc.armed[partition]){
-            sendMonitoring(topicoDeMensaje,"disarmed",deviceID + " MONITORING: DISARMED status published for partition " + partitionNumber);
+            sendMonitoring(topicoDeMensaje,"disarmed",String(deviceIdFinalValue) + " MONITORING: DISARMED status published for partition " + partitionNumber);
           }
         }
       }
@@ -146,11 +144,11 @@ void doDSC(){
         String topicSendMonit=(String)monitoringTopicValue + "/Partition" + partitionNumber;
         if (dsc.alarm[partition]) {
           mqttClient.publish(publishTopic, "triggered", true); // Alarm tripped
-          sendMonitoring(topicSendMonit,"triggered",deviceID + " MONITORING: TRIGGERED status published for partition " + partitionNumber);
+          sendMonitoring(topicSendMonit,"triggered",String(deviceIdFinalValue) + " MONITORING: TRIGGERED status published for partition " + partitionNumber);
         }
         else if (!dsc.armedChanged[partition]) {
           mqttClient.publish(publishTopic, "disarmed", true);
-          sendMonitoring(topicSendMonit,"disarmed",deviceID + " MONITORING: DISARMED status published for partition " + partitionNumber);
+          sendMonitoring(topicSendMonit,"disarmed",String(deviceIdFinalValue) + " MONITORING: DISARMED status published for partition " + partitionNumber);
         }
       }
 
@@ -163,10 +161,10 @@ void doDSC(){
         String topicSendMonit=(String) monitoringTopicValue + "/Fire" + partitionNumber;
         if (dsc.fire[partition]){
           mqttClient.publish(firePublishTopic, "1", (bool) atoi(mqttRetainValue));  // Fire alarm tripped
-          sendMonitoring(topicSendMonit,"1",deviceID + " MONITORING: FIRE status published for partition " + partitionNumber);
+          sendMonitoring(topicSendMonit,"1",String(deviceIdFinalValue) + " MONITORING: FIRE status published for partition " + partitionNumber);
         }else{ 
           mqttClient.publish(firePublishTopic, "0", (bool) atoi(mqttRetainValue));                      // Fire alarm restored
-          sendMonitoring(topicSendMonit,"0",deviceID + " MONITORING: FIRE status published for partition " + partitionNumber);
+          sendMonitoring(topicSendMonit,"0",String(deviceIdFinalValue) + " MONITORING: FIRE status published for partition " + partitionNumber);
         }
       }
     }
@@ -196,14 +194,14 @@ void doDSC(){
                 mqttClient.publish(zonePublishTopic, "1", (bool) atoi(mqttRetainValue));            // Zone open
               //Monitoring
               if (atoi(enableMonitoringValue) == 3) {
-                sendMonitoring(topicval,"1",deviceID + " MONITORING: ACTIVE status published for zone " + zone);
+                sendMonitoring(topicval,"1",String(deviceIdFinalValue) + " MONITORING: ACTIVE status published for zone " + zone);
               }                
             }
             else {
               mqttClient.publish(zonePublishTopic, "0", (bool) atoi(mqttRetainValue));         // Zone closed
               //Monitoring
               if (atoi(enableMonitoringValue) == 3) {
-                sendMonitoring(topicval,"0",deviceID + " MONITORING: INACTIVE status published for zone " + zone);
+                sendMonitoring(topicval,"0",String(deviceIdFinalValue) + " MONITORING: INACTIVE status published for zone " + zone);
               }
             }
           }
