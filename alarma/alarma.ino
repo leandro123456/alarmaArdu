@@ -248,22 +248,23 @@ void loop() {
   iotWebConf.doLoop();
   mqttClient.loop();
   dsc.loop();
+  //doDSC();
 
   if (needMqttConnect){
     if (connectMqtt()){
       needMqttConnect = false;
     }
   }
-    else{
-      if ((iotWebConf.getState() == iotwebconf::OnLine) && (!mqttClient.connected())){
-        Serial.println("MQTT reconnect");
-        if (atoi(enableMqttDebugValue) == 1) {
-      String msgtext=String(deviceIdFinalValue) + " - MQTT reconnect";
-      mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(),(bool) atoi(mqttRetainValue));
-	}
-	connectMqtt();
-     }
-}
+  else{
+    if ((iotWebConf.getState() == iotwebconf::OnLine) && (!mqttClient.connected())){
+      Serial.println("MQTT reconnect");
+      if (atoi(enableMqttDebugValue) == 1) {
+        String msgtext=String(deviceIdFinalValue) + " - MQTT reconnect";
+        mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(),(bool) atoi(mqttRetainValue));
+      }
+      connectMqtt();
+    }
+  }
   if (needReset){
     Serial.println("Rebooting after 1 second.");
     if (atoi(enableMqttDebugValue) == 1) {
@@ -426,8 +427,6 @@ bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper){
             [](const char *userName, char *password)
             { httpUpdater.updateCredentials(userName, password); });
   }
-
-
   return valid;
 }
 

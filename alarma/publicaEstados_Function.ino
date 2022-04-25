@@ -30,13 +30,49 @@ void publicaEstados(){
     }
 
     if(hanosended){
-      Serial.println("##################################################################");
-      Serial.println("##################################################################");
-      Serial.println("##################################################################");
       mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition).c_str(), true);             
       Serial.println("Active partition sended: "+String(activePartition)+ " to: "+ String(mqttActivePartitionTopicValue));
       SendHaConfiguration();
       hanosended=false;
+      mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"Start DSC init Partitions", false);
+      if (dsc.keybusConnected) {
+        for (byte partition = 0; partition < dscPartitions; partition++) {
+          char partitionNumber[2];
+          itoa(partition + 1, partitionNumber, 10);
+          char publishTopic[strlen(mqttPartitionTopicValue) + 2];
+          appendPartition(mqttPartitionTopicValue, partition, publishTopic);
+          String msgtext1;
+          if (dsc.armed[partition]) {
+            if (dsc.armedAway[partition] && dsc.noEntryDelay[partition]) 
+              mqttClient.publish(publishTopic, "armed_night", true);
+            else if (dsc.armedAway[partition]) 
+              mqttClient.publish(publishTopic, "armed_away", true);
+            else if (dsc.armedStay[partition] && dsc.noEntryDelay[partition]) 
+              mqttClient.publish(publishTopic, "armed_night", true);
+            else if (dsc.armedStay[partition]) 
+              mqttClient.publish(publishTopic, "armed_home", true);
+            //Monitoring
+            if (atoi(enableMonitoringValue) > 1) {
+              msgtext1=(String)monitoringTopicValue + "/Partition" + partitionNumber;
+              if (dsc.armedAway[partition]){
+                sendMonitoring(msgtext1,"armed_away",String(deviceIdFinalValue) +" MONITORING: ARMED_AWAY Status published for partition " + partitionNumber);
+              }
+              else if (dsc.armedStay[partition]){
+                sendMonitoring(msgtext1,"armed_home",String(deviceIdFinalValue) + " MONITORING: ARMED_HOME status published for partition " + partitionNumber);
+              }
+            }
+          }
+          else {
+            mqttClient.publish(publishTopic, "disarmed", true);
+            msgtext1=(String)monitoringTopicValue + "/Partition" + partitionNumber;
+            sendMonitoring(msgtext1,"disarmed",(String)"MONITORING: NORMAL Status published for partition " + partitionNumber);
+          }
+        }
+        mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"DSC init Partitions", false);
+      }
+      else{
+        mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"DSC NO conected", false);
+      }
     }
   } else {
     //--------------- SerialDebug: ---------
@@ -194,6 +230,19 @@ void SendHaConfiguration(){
   memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
   strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());  
   mqttClient.publish(HomeAssitanConfTopic, buffer1, true); 
+  //Status mensajes
+  DynamicJsonDocument obj2(500);
+  char buffer2[500];
+  obj2["~"] = deviceID;
+  obj2["name"] = "Security Partition 1";
+  obj2["stat_t"] = "~/MNTR/DetailPartition1";
+  obj2["avty_t"] = "~/Status";
+  obj2["ic"] = "mdi:shield";
+  serializeJson(obj2, buffer2);
+  HomeAssitanValue= String(defaultHAPrefixValue)+"/sensor/"+deviceID+"-s/config";
+  memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+  strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());  
+  mqttClient.publish(HomeAssitanConfTopic, buffer2, true); 
   //Trouble
   HomeAssitanValue= String(defaultHAPrefixValue)+"/binary_sensor/"+deviceID+"-Trouble/config";
   memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);

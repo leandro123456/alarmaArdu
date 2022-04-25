@@ -84,16 +84,27 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
   else{
     // Actualiza con el tiempo estado publicado
     if (topico == mqttStatusTopicValue) lastSentStatus = String((char *)payload);
-    Serial.println("va a comparar si son guales el tipico recibido: "+ String(topic) +": y el parametro del topico: "+ String(mqttCommandTopicValue));
-    if (topico  == mqttCommandTopicValue){
+    String valMes="Message received: " +topico+ " **-** " + String((char *)payload)+" **";
+    Serial.println(valMes);
 
-    String partitionN = String((char *)payload).substring(0,1);
-    String acTion = String((char *)payload).substring(1);    
+    char HomeAssitanConfTopic[STRING_LEN];
+    String HomeAssitanValue= String(mqttKeepAliveTopicValue)+"/debug1";
+    memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
+    strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
+    mqttClient.publish(HomeAssitanConfTopic,valMes.c_str(), (bool) atoi(mqttRetainValue));
+      
+
+    String valor= String((char *)payload);
+    String partitionN = valor.substring(0,1);
+    String acTion = valor.substring(1,2);
     Serial.println("partitionN: " + partitionN + " - acTion: " + acTion);
+    byte partitionrr = 0;
+    byte payloadIndexrr = 0;
+    Serial.println("parseo de la accion!!!!");
 
     if (partitionN >= "0" && partitionN <= "8" && (acTion == "S" || acTion == "A" || acTion == "D" ) ){
       Serial.println("Entro en acciones tipo de accion: "+ acTion);
- 
+
       // Arm stay
       if (acTion == "S" && !dsc.armed[partitionN.toInt()-1] && !dsc.exitDelay[partitionN.toInt()-1]) {
         Serial.println("tipo de accion: "+ acTion);
@@ -111,104 +122,111 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
         Serial.println("tipo de accion: "+ acTion);
         controlDSC("disarm",partitionN.toInt());
       }     
-    }else {//Trarammiento no documentado de PINES 1(14) y 2(13)
-      if (String((char *)payload) == "P2H"){   //Pone el Pin2 en High
-        digitalWrite(13,HIGH);
-        //--------------- SerialDebug: --------- 
-        Serial.println("Pin2 in now HIGH");
-        // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext= String(deviceIdFinalValue) +  " Pin2 in now HIGH.";
-          mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
+    }
+    else {//Trarammiento no documentado de PINES 1(14) y 2(13)
+      acTion = valor.substring(1,5);
+      boolean NoEntro=true;
+      if(NoEntro){
+        if (acTion == "P2H1s"){ //Pone el Pin2 en High y despus de un segundo lo pone en LOW
+          digitalWrite(13,HIGH);
+          delay(1000);
+          digitalWrite(13,LOW);
+          //--------------- SerialDebug: --------- 
+          Serial.println("Pin2 was put to HIGH and now is LOW");
+          // --------------- mqttDebug: --------- 
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext= String(deviceIdFinalValue) +  " Pin2 was put to HIGH and now is LOW.";
+            mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));}
+          NoEntro=false;
+        }
+        if (acTion == "P2L1s"){ //Pone el Pin2 en LOW y despus de un segundo lo pone en HIGH
+          digitalWrite(13,LOW);
+          delay(1000);
+          digitalWrite(13,HIGH);
+          //--------------- SerialDebug: --------- 
+          Serial.println("Pin2 was put to LOW and now is HIGH");
+          // --------------- mqttDebug: --------- 
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext= String(deviceIdFinalValue) +  " Pin2 was put to LOW and now is HIGH.";
+            mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));}
+          NoEntro=false;
+        }
+
+        if (acTion == "P1H1s"){ //Pone el Pin1 en HIGH y despus de un segundo lo pone en LOW
+          digitalWrite(14,HIGH);
+          delay(1000);
+          digitalWrite(14,LOW);
+          //--------------- SerialDebug: --------- 
+          Serial.println("Pin1 was put to HIGH and now is LOW");
+          // --------------- mqttDebug: --------- 
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext=String(deviceIdFinalValue) +  " Pin1 was put to HIGH and now is LOW";
+            mqttClient.publish(MqttDebugTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue));}
+          NoEntro=false;
+        }
+
+        if (acTion == "P1L1s"){ //Pone el Pin1 en LOW y despus de un segundo lo pone en HIGH
+          digitalWrite(14,LOW);
+          delay(1000);
+          digitalWrite(14,HIGH);
+          //--------------- SerialDebug: --------- 
+          Serial.println("Pin1 was put to LOW and now is HIGH");
+          // --------------- mqttDebug: --------- 
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext=String(deviceIdFinalValue) +  " Pin1 was put to LOW and now is HIGH";
+            mqttClient.publish(MqttDebugTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue));}
+          NoEntro=false;
         }
       }
-
-      if (String((char *)payload) == "P2H1s"){ //Pone el Pin2 en High y despus de un segundo lo pone en LOW
-        digitalWrite(13,HIGH);
-        delay(1000);
-        digitalWrite(13,LOW);
-        //--------------- SerialDebug: --------- 
-        Serial.println("Pin2 was put to HIGH and now is LOW");
-        // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext= String(deviceIdFinalValue) +  " Pin2 was put to HIGH and now is LOW.";
-          mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));}
-      } 
-
-      if (String((char *)payload) == "P2L"){ //Pone el Pin2 en LOW
-        digitalWrite(13,LOW);
-        //--------------- SerialDebug: --------- 
-        Serial.println("Pin2 in now LOW");
-        // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext=String(deviceIdFinalValue) +  " Pin2 in now LOW.";
-          mqttClient.publish(MqttDebugTopicValue, msgtext.c_str(), (bool) atoi(mqttRetainValue));
+      if(NoEntro){
+        acTion = valor.substring(1,4);
+        if (acTion == "P2H"){   //Pone el Pin2 en High
+          digitalWrite(13,HIGH);
+          //--------------- SerialDebug: --------- 
+          Serial.println("Pin2 in now HIGH");
+          // --------------- mqttDebug: --------- 
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext= String(deviceIdFinalValue) +  " Pin2 in now HIGH.";
+            mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
+          }
         }
-      }
-
-      if (String((char *)payload) == "P2L1s"){ //Pone el Pin2 en LOW y despus de un segundo lo pone en HIGH
-        digitalWrite(13,LOW);
-        delay(1000);
-        digitalWrite(13,HIGH);
-        //--------------- SerialDebug: --------- 
-        Serial.println("Pin2 was put to LOW and now is HIGH");
-        // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext= String(deviceIdFinalValue) +  " Pin2 was put to LOW and now is HIGH.";
-          mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));}
-      }
-                
-      if (String((char *)payload) == "P1H"){  //Pone el Pin1 en HIGH
-        digitalWrite(14,HIGH);
-        //--------------- SerialDebug: --------- 
-        Serial.println("Pin1 in now HIGH");
-        // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext= String(deviceIdFinalValue) +  " Pin1 in now HIGH.";
-          mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
+        if (acTion == "P2L"){ //Pone el Pin2 en LOW
+          digitalWrite(13,LOW);
+          //--------------- SerialDebug: --------- 
+          Serial.println("Pin2 in now LOW");
+          // --------------- mqttDebug: --------- 
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext=String(deviceIdFinalValue) +  " Pin2 in now LOW.";
+            mqttClient.publish(MqttDebugTopicValue, msgtext.c_str(), (bool) atoi(mqttRetainValue));
+          }
+        }      
+        if (acTion == "P1H"){  //Pone el Pin1 en HIGH
+          digitalWrite(14,HIGH);
+          //--------------- SerialDebug: --------- 
+          Serial.println("Pin1 in now HIGH");
+          // --------------- mqttDebug: --------- 
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext= String(deviceIdFinalValue) +  " Pin1 in now HIGH.";
+            mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
+          }
+        }       
+        if (acTion == "P1L"){ //Pone el Pin1 en LOW
+          digitalWrite(14,LOW);
+          //--------------- SerialDebug: --------- 
+          Serial.println("Pin1 in now LOW");
+          // --------------- mqttDebug: --------- 
+          if (atoi(enableMqttDebugValue) == 1) {
+            String msgtext= String(deviceIdFinalValue) +  " Pin1 in now LOW.";
+            mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
+          }
         }
-      }
-
-      if (String((char *)payload) == "P1H1s"){ //Pone el Pin1 en HIGH y despus de un segundo lo pone en LOW
-        digitalWrite(14,HIGH);
-        delay(1000);
-        digitalWrite(14,LOW);
-        //--------------- SerialDebug: --------- 
-        Serial.println("Pin1 was put to HIGH and now is LOW");
-        // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext=String(deviceIdFinalValue) +  " Pin1 was put to HIGH and now is LOW";
-          mqttClient.publish(MqttDebugTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue));}
-      }
-                
-      if (String((char *)payload) == "P1L"){ //Pone el Pin1 en LOW
-        digitalWrite(14,LOW);
-        //--------------- SerialDebug: --------- 
-        Serial.println("Pin1 in now LOW");
-        // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext= String(deviceIdFinalValue) +  " Pin1 in now LOW.";
-          mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
+        if (acTion != "P2H" && acTion != "P2L" && acTion != "P1H" && acTion != "P1L"){
+          dsc.write((char *)payload);  //Chequear por que no funciona con panic y con auxiliar 
+          mqttClient.publish(MqttDebugTopicValue,String("Chequear por que no funciona con panic y con auxiliar").c_str(), (bool) atoi(mqttRetainValue));
         }
-      }
-
-      if (String((char *)payload) == "P1L1s"){ //Pone el Pin1 en LOW y despus de un segundo lo pone en HIGH
-        digitalWrite(14,LOW);
-        delay(1000);
-        digitalWrite(14,HIGH);
-        //--------------- SerialDebug: --------- 
-        Serial.println("Pin1 was put to LOW and now is HIGH");
-        // --------------- mqttDebug: --------- 
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext=String(deviceIdFinalValue) +  " Pin1 was put to LOW and now is HIGH";
-          mqttClient.publish(MqttDebugTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue));}
-      }
-
-      if (String((char *)payload) != "P2H" && String((char *)payload) != "P2L" && String((char *)payload) != "P1H" && String((char *)payload) != "P1L")
-        dsc.write((char *)payload);  //Chequear por que no funciona con panic y con auxiliar    
+      }   
     }    
-  }
- }
+  }  
 }
 
 
