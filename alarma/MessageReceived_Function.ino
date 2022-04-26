@@ -100,7 +100,6 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
     Serial.println("partitionN: " + partitionN + " - acTion: " + acTion);
     byte partitionrr = 0;
     byte payloadIndexrr = 0;
-    Serial.println("parseo de la accion!!!!");
 
     if (partitionN >= "0" && partitionN <= "8" && (acTion == "S" || acTion == "A" || acTion == "D" ) ){
       Serial.println("Entro en acciones tipo de accion: "+ acTion);
@@ -221,7 +220,7 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
           }
         }
         if (acTion != "P2H" && acTion != "P2L" && acTion != "P1H" && acTion != "P1L"){
-          dsc.write((char *)payload);  //Chequear por que no funciona con panic y con auxiliar 
+          dsc.write(partitionN.c_str());  //Chequear por que no funciona con panic y con auxiliar 
           mqttClient.publish(MqttDebugTopicValue,String("Chequear por que no funciona con panic y con auxiliar").c_str(), (bool) atoi(mqttRetainValue));
         }
       }   
