@@ -11,7 +11,7 @@
 unsigned int localPort = 8888;
 const char productType[] = "DSC01"; 
 const char thingName[] = "Coiaca-DSC01";  
-const char wifiInitialApPassword[] = "wDJGtmE6Rj4Ft"; 
+const char wifiInitialApPassword[] = "wDJGtmE6Rj4Ft";//"12345678";// 
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
@@ -126,7 +126,7 @@ static char mqttQoSParamVal[][NUMBER_LEN] ={ "0", "1","2"};
 static char mqttQoSParamNam[][NUMBER_LEN] = { "0", "1","2"};  
 IotWebConfParameterGroup group2 =  IotWebConfParameterGroup("group2", "MQTT Config");
 IotWebConfTextParameter mqttServerParam = IotWebConfTextParameter("MQTT Server URL", "mqttServer", mqttServerValue, STRING_LEN, "mqtt.coiaca.com", "mqttURL", "mqtt.coiaca.com");
-IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port", "MQTTPort", mqttPortValue, NUMBER_LEN, "8884", "1..9999", "min='1' max='9999' step='1'");
+IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port", "MQTTPort", mqttPortValue, NUMBER_LEN, "8883", "1..9999", "min='1' max='9999' step='1'");
 IotWebConfSelectParameter isSecureConectionParam = IotWebConfSelectParameter("Is Secure Port?", "Is Secure Port", isSecureConectionValue, NUMBER_LEN, (char*)isSecureConectionVal, (char*)isSecureConectionNam, sizeof(isSecureConectionNam) / NUMBER_LEN, NUMBER_LEN);
 IotWebConfTextParameter mqttUserNameParam = IotWebConfTextParameter("MQTT user", "mqttUser", mqttUserNameValue, STRING_LEN, "mqttusr",  nullptr,"mqttusr");
 IotWebConfPasswordParameter mqttUserPasswordParam = IotWebConfPasswordParameter("MQTT password", "mqttPass", mqttUserPasswordValue, STRING_LEN, "mqttpwd", nullptr,"mqttpwd");
