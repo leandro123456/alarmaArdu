@@ -13,7 +13,7 @@ const char wifiInitialApPassword[] = "12345678";
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
-#define CONFIG_VERSION "DSC_v1.0.0"
+#define CONFIG_VERSION "DSC_v1.1.0"
 
 #define CONFIG_PIN 12
 #define STATUS_PIN 0   
@@ -247,9 +247,13 @@ void handleRoot(){
   String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
   s += "<title>Coiaca: IoT Device Software Update</title></head><body><center>";
   s += FPSTR(CUSTOMHTML_BODY_INNER);
-  s += "<br /><br />The Software update is on going<b>";
-  s += "</b><br /><br />";
-  s += "<br /><br />Please Wait and goback to the Previuos View<b>";
+  s += "<br /><br />Device ID: <b>";
+  s += String(deviceIdFinalValue);
+  s += "</b>";
+  s += "<br /><br/>Firmware Version: <b>";
+  s += String(CONFIG_VERSION);
+  s += "</b><br/><br/>";
+  s += "<a href='config'>Config</a><br />";
   s += "</center></body></html>\n";
   server.send(200, "text/html; charset=UTF-8", s);
 }
