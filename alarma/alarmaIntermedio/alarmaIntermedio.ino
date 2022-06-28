@@ -244,16 +244,12 @@ void handleRoot(){
   if (iotWebConf.handleCaptivePortal()){
     return;
   }
-   String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
-  s += "<title>Coiaca: IoT Device Configuration</title></head><body><center>";
+  String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
+  s += "<title>Coiaca: IoT Device Software Update</title></head><body><center>";
   s += FPSTR(CUSTOMHTML_BODY_INNER);
-  s += "<br /><br />Device ID: <b>";
-  s += String(deviceIdFinalValue);
-  s += "</b>";
-  s += "<br /><br/>Firmware Version: <b>";
-  s += String(CONFIG_VERSION);
-  s += "</b><br/><br/>";
-  s += "<a href='config'>Config</a><br />";
+  s += "<br /><br />The Software update is on going<b>";
+  s += "</b><br /><br />";
+  s += "<br /><br />Please Wait and goback to the Previuos View<b>";
   s += "</center></body></html>\n";
   server.send(200, "text/html; charset=UTF-8", s);
 }
@@ -288,7 +284,7 @@ void wifiConnected(){
     ESPhttpUpdate.onProgress(update_progress);
     ESPhttpUpdate.onError(update_error);
 
-    t_httpUpdate_return ret = ESPhttpUpdate.update(client,updateFirmwareValue);
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client,host);
 
     switch (ret) {
       case HTTP_UPDATE_FAILED:
