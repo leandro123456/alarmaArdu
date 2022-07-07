@@ -1,14 +1,14 @@
 void PublicarConfiguracionInicial(){
   if(mqttClient.connected()){
     Serial.println("Publicar configuracion inicial");
-    String msgtext="{\"mail\":\""+ (String)emailValue + "\",\"pwd\":\"" + (String)passwordFinalValue + "\",\"NdvHATypDvid\":\"" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+(String)deviceIdFinalValue+"\"}";
+    String msgtext="{\"mail\":\""+ (String)emailValue + "\",\"pwd\":\"" + (String)passwordFinalValue + "\",\"NdvHATypDvid\":\"" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+"empty"+"\"}";
     mqttClient.publish(mqttDeviceConfigValue.c_str(),msgtext.c_str() ,false); 
     /// --------------- SerialDebug: ----------
     Serial.println("Publishing Initial data to register...");
-    Serial.println("Message sent to initial register. Topic: " + (String)mqttDeviceConfigValue + "{\"mail\":\""+ (String)emailValue + "\",\"NdvHATypDvid\":\"" + "-" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+(String)deviceIdFinalValue+"\"}" );
+    Serial.println("Message sent to initial register. Topic: " + (String)mqttDeviceConfigValue + "{\"mail\":\""+ (String)emailValue + "\",\"NdvHATypDvid\":\"" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+"empty"+"\"}" );
     // --------------- mqttDebug: ---------
     if (atoi(enableMqttDebugValue) == 1) {
-      msgtext=String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttDeviceConfigValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) +"\"}";
+      msgtext=String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttDeviceConfigValue + " Payload: {\"deviceId\":\"" + "empty" +"\"}";
       mqttClient.publish(MqttDebugTopicValue, msgtext.c_str(), false);
     }
   }else{

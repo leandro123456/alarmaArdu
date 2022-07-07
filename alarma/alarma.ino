@@ -11,11 +11,11 @@
 unsigned int localPort = 8888;
 const char productType[] = "DSC01"; 
 const char deviceName[] = "Coiaca-DSC01";  
-const char wifiInitialApPassword[] = "dFHCl30mRj4JT";//"12345678";// 
+const char wifiInitialApPassword[] = "dFHCl30mRj4JT";//"12345678";//
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
-#define CONFIG_VERSION "DSC_v1.1.0"
+#define CONFIG_VERSION "DSC_v1.1.1"
 
 #define CONFIG_PIN 12
 #define STATUS_PIN 0   
@@ -424,14 +424,13 @@ bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper){
   if (l < 10)
   {
     Serial.println("Initial configuration of the Device");
-    memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
-    strncpy(deviceIdFinalValue, String("empty").c_str(), String("empty").length());
-
-    iotWebConf.setupUpdateServer(
-            [](const char *updatePath)
-            { httpUpdater.setup(&server, updatePath); },
-            [](const char *userName, char *password)
-            { httpUpdater.updateCredentials(userName, password); });
+  //  memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
+  //  strncpy(deviceIdFinalValue, String("empty").c_str(), String("empty").length());
+  //  iotWebConf.setupUpdateServer(
+  //          [](const char *updatePath)
+  //          { httpUpdater.setup(&server, updatePath); },
+  //          [](const char *userName, char *password)
+  //          { httpUpdater.updateCredentials(userName, password); });
   }
   return valid;
 }
