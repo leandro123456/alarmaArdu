@@ -1,3 +1,75 @@
+void CompleteRegister(String payload){
+
+  Serial.println("PAYLOAD: "+ payload);
+  StaticJsonDocument<500> jsonBuffer;
+  deserializeJson(jsonBuffer, payload);
+
+  String deviceIdObtenido = jsonBuffer["devid"];
+  if(deviceIdObtenido.equals("password-validation-invalid") ||
+      deviceIdObtenido.equals("password-validation-wrong")||
+      deviceIdObtenido.equals("wrong-password") ||
+      deviceIdObtenido.equals("invalid-deviceid")){
+    Serial.println(deviceIdObtenido);
+    correctPassword = false;
+    return;
+  }
+  
+  String mqttUserObtenido = jsonBuffer["mqttusr"];
+  String mqttPasswordObtenido = jsonBuffer["mqttpwd"];
+
+  //Configuraciones
+  memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
+  strncpy(deviceIdFinalValue, String(deviceIdObtenido).c_str(), String(deviceIdObtenido).length());
+
+  memset(mqttUserNameValue, 0, sizeof mqttUserNameValue);
+  strncpy(mqttUserNameValue, String(mqttUserObtenido).c_str(), String(mqttUserObtenido).length());
+
+  memset(mqttUserPasswordValue, 0, sizeof mqttUserPasswordValue);
+  strncpy(mqttUserPasswordValue, String(mqttPasswordObtenido).c_str(), String(mqttPasswordObtenido).length());
+
+  memset(mqttClientIDValue, 0, sizeof mqttClientIDValue);
+  strncpy(mqttClientIDValue, String(deviceIdObtenido+"CID").c_str(), String(deviceIdObtenido+"CID").length());
+
+  //Topicos
+  memset(mqttStatusTopicValue, 0, sizeof mqttStatusTopicValue);
+  strncpy(mqttStatusTopicValue, String(deviceIdObtenido+"/Status").c_str(), String(deviceIdObtenido+"/Status").length());
+
+  memset(mqttPartitionTopicValue, 0, sizeof mqttPartitionTopicValue);
+  strncpy(mqttPartitionTopicValue, String(deviceIdObtenido +"/Partition").c_str(), String(deviceIdObtenido +"/Partition").length());
+
+  memset(mqttActivePartitionTopicValue, 0, sizeof mqttActivePartitionTopicValue);
+  strncpy(mqttActivePartitionTopicValue, String(deviceIdObtenido +"/activePartition").c_str(), String(deviceIdObtenido +"/activePartition").length());
+
+  memset(mqttZoneTopicValue, 0, sizeof mqttZoneTopicValue);
+  strncpy(mqttZoneTopicValue, String(deviceIdObtenido +"/Zone").c_str(), String(deviceIdObtenido +"/Zone").length());
+
+  memset(mqttFireTopicValue, 0, sizeof mqttFireTopicValue);
+  strncpy(mqttFireTopicValue, String(deviceIdObtenido +"/Fire").c_str(), String(deviceIdObtenido +"/Fire").length());
+
+  memset(mqttTroubleTopicValue, 0, sizeof mqttTroubleTopicValue);
+  strncpy(mqttTroubleTopicValue, String(deviceIdObtenido +"/Trouble").c_str(), String(deviceIdObtenido +"/Trouble").length());
+
+  memset(mqttCommandTopicValue, 0, sizeof mqttCommandTopicValue);
+  strncpy(mqttCommandTopicValue, String(deviceIdObtenido +"/cmd").c_str(), String(deviceIdObtenido +"/cmd").length());
+
+  memset(mqttKeepAliveTopicValue, 0, sizeof mqttKeepAliveTopicValue);
+  strncpy(mqttKeepAliveTopicValue, String(deviceIdObtenido +"/keepAlive").c_str(), String(deviceIdObtenido +"/keepAlive").length());
+
+  memset(monitoringTopicValue, 0, sizeof monitoringTopicValue);
+  strncpy(monitoringTopicValue, String(deviceIdObtenido+"/MNTR").c_str(), String(deviceIdObtenido+"/MNTR").length());
+
+  memset(MqttDebugTopicValue, 0, sizeof MqttDebugTopicValue);
+  strncpy(MqttDebugTopicValue, String("RMgmt/"+deviceIdObtenido+"/debug").c_str(), String("RMgmt/"+deviceIdObtenido+"/debug").length());
+
+
+  iotWebConf.setupUpdateServer(
+    [](const char *updatePath)
+    { httpUpdater.setup(&server, updatePath); },
+    [](const char *userName, char *password)
+    { httpUpdater.updateCredentials(userName, password); });
+  iotWebConf.saveConfig();
+}
+
 void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
   String topico=String(topic);
   Serial.println("Message received: " +topico+ " **-** " + String((char *)payload));
@@ -6,9 +78,9 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
     mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
   }
 
-  Serial.println(mqttDeviceConfigResponseValue);
-  if(topico==mqttDeviceConfigResponseValue){
-    Serial.print("Finalizacion registro - payload: ");
+ // Serial.println(mqttDeviceConfigResponseValue);
+ // if(topico==mqttDeviceConfigResponseValue){
+/**    Serial.print("Finalizacion registro - payload: ");
     Serial.println(String((char *)payload));
     StaticJsonDocument<500> jsonBuffer;  // estaba en 300 pero lo subo a 500 porque no entraban los comments
 
@@ -27,61 +99,10 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
     String mqttPasswordObtenido = mqttCred.substring(mqttSeparador+1);
     Serial.println("mqttUser obtenido: "+ mqttUserObtenido);
     Serial.println("mqttPassword obtenido: "+ mqttPasswordObtenido);
+**/
 
-
-    //Configuraciones
-    memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
-    strncpy(deviceIdFinalValue, String(deviceIdObtenido).c_str(), String(deviceIdObtenido).length());
-
-    memset(mqttUserNameValue, 0, sizeof mqttUserNameValue);
-    strncpy(mqttUserNameValue, String(mqttUserObtenido).c_str(), String(mqttUserObtenido).length());
-
-    memset(mqttUserPasswordValue, 0, sizeof mqttUserPasswordValue);
-    strncpy(mqttUserPasswordValue, String(mqttPasswordObtenido).c_str(), String(mqttPasswordObtenido).length());
-
-    memset(mqttClientIDValue, 0, sizeof mqttClientIDValue);
-    strncpy(mqttClientIDValue, String(deviceIdObtenido+"CID").c_str(), String(deviceIdObtenido+"CID").length());
-
-    //Topicos
-    memset(mqttStatusTopicValue, 0, sizeof mqttStatusTopicValue);
-    strncpy(mqttStatusTopicValue, String(deviceIdObtenido+"/Status").c_str(), String(deviceIdObtenido+"/Status").length());
-
-    memset(mqttPartitionTopicValue, 0, sizeof mqttPartitionTopicValue);
-    strncpy(mqttPartitionTopicValue, String(deviceIdObtenido +"/Partition").c_str(), String(deviceIdObtenido +"/Partition").length());
-
-    memset(mqttActivePartitionTopicValue, 0, sizeof mqttActivePartitionTopicValue);
-    strncpy(mqttActivePartitionTopicValue, String(deviceIdObtenido +"/activePartition").c_str(), String(deviceIdObtenido +"/activePartition").length());
-
-    memset(mqttZoneTopicValue, 0, sizeof mqttZoneTopicValue);
-    strncpy(mqttZoneTopicValue, String(deviceIdObtenido +"/Zone").c_str(), String(deviceIdObtenido +"/Zone").length());
-
-    memset(mqttFireTopicValue, 0, sizeof mqttFireTopicValue);
-    strncpy(mqttFireTopicValue, String(deviceIdObtenido +"/Fire").c_str(), String(deviceIdObtenido +"/Fire").length());
-
-    memset(mqttTroubleTopicValue, 0, sizeof mqttTroubleTopicValue);
-    strncpy(mqttTroubleTopicValue, String(deviceIdObtenido +"/Trouble").c_str(), String(deviceIdObtenido +"/Trouble").length());
-
-    memset(mqttCommandTopicValue, 0, sizeof mqttCommandTopicValue);
-    strncpy(mqttCommandTopicValue, String(deviceIdObtenido +"/cmd").c_str(), String(deviceIdObtenido +"/cmd").length());
-
-    memset(mqttKeepAliveTopicValue, 0, sizeof mqttKeepAliveTopicValue);
-    strncpy(mqttKeepAliveTopicValue, String(deviceIdObtenido +"/keepAlive").c_str(), String(deviceIdObtenido +"/keepAlive").length());
-
-    memset(monitoringTopicValue, 0, sizeof monitoringTopicValue);
-    strncpy(monitoringTopicValue, String(deviceIdObtenido+"/MNTR").c_str(), String(deviceIdObtenido+"/MNTR").length());
-
-    memset(MqttDebugTopicValue, 0, sizeof MqttDebugTopicValue);
-    strncpy(MqttDebugTopicValue, String("RMgmt/"+deviceIdObtenido+"/debug").c_str(), String("RMgmt/"+deviceIdObtenido+"/debug").length());
-  
-
-    iotWebConf.setupUpdateServer(
-      [](const char *updatePath)
-      { httpUpdater.setup(&server, updatePath); },
-      [](const char *userName, char *password)
-      { httpUpdater.updateCredentials(userName, password); });
-    iotWebConf.saveConfig();
-  }
-  else{
+  //}
+  //else{
     // Actualiza con el tiempo estado publicado
     if (topico == mqttStatusTopicValue) lastSentStatus = String((char *)payload);
     String valMes="Message received: " +topico+ " **-** " + String((char *)payload)+" **";
@@ -225,7 +246,7 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length) {
         }
       }   
     }    
-  }  
+ // }  
 }
 
 

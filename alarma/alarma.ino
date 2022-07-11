@@ -7,15 +7,18 @@
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266HTTPClient.h>
 #include <ESP8266httpUpdate.h>
+#include <WiFiClientSecureBearSSL.h>
 
 unsigned int localPort = 8888;
 const char productType[] = "DSC01"; 
 const char deviceName[] = "Coiaca-DSC01";  
-const char wifiInitialApPassword[] = "dFHCl30mRj4JT";//"12345678";//
+const char wifiInitialApPassword[] = "l4v1D43SB3LA0";//"12345678";//
+const uint8_t fingerprint[20] = {0x77,0xB5,0xBD,0x3D,0xE9,0x8D,0x54,0x38,0xDF,0x62,0x1E,0xFA,0x2F,0x26,0xF9,0x3F,0x9C,0x27,0xB2,0xCF};
+//local { 0x52,0xC8,0x22,0x9F,0xCB,0xAD,0xB4,0xF9,0x21,0xF5,0x25,0x82,0x5B,0x49,0x11,0x87,0xAB,0x66,0x85,0x7E};
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
-#define CONFIG_VERSION "DSC_v1.1.1"
+#define CONFIG_VERSION "DSC_v1.2.0"
 
 #define CONFIG_PIN 12
 #define STATUS_PIN 0   
@@ -164,7 +167,7 @@ IotWebConfTextParameter MqttDebugTopicParam = IotWebConfTextParameter("MQTT Debu
 static char remoteUpateFirmwarePVal[][NUMBER_LEN] = { "0", "1"};
 static char remoteUpateFirmwarePNam[][NUMBER_LEN] = { "No", "Yes"};
 IotWebConfParameterGroup group6 =  IotWebConfParameterGroup("group6", "Remote Update Firmware");
-IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Enable Remote Update Firmware", "RemoteUpdateFirmware", remoteUpateFirmware, NUMBER_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Update Firmware Now", "RemoteUpdateFirmware", remoteUpateFirmware, NUMBER_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / NUMBER_LEN, NUMBER_LEN);
 IotWebConfTextParameter updateFirmwareValueParam = IotWebConfTextParameter("Update Firmware URL", "upateFirmware", updateFirmwareValue, STRING_LEN, "http://device.coiaca.com/fwupdate/BRDSC01_1_0_0i.bin",nullptr, "http://device.coiaca.com/fwupdate/BRDSC01_1_0_0i.bin");
 
 
@@ -333,7 +336,7 @@ void handleRoot(){
 void wifiConnected(){
   Serial.println("DeviceId identified: " +String(deviceIdFinalValue));
 
-  if (atoi(remoteUpateFirmware) == 1) {
+  if (atoi(remoteUpateFirmware) == 1 && !String(deviceIdFinalValue).equals("")) {
      for (uint8_t t = 4; t > 0; t--) {
     Serial.printf("[SETUP] WAIT %d...\n", t);
     Serial.flush();
@@ -346,37 +349,54 @@ void wifiConnected(){
     ESPhttpUpdate.onEnd(update_finished);
     ESPhttpUpdate.onProgress(update_progress);
     ESPhttpUpdate.onError(update_error);
-
     t_httpUpdate_return ret = ESPhttpUpdate.update(client,updateFirmwareValue);
 
     switch (ret) {
       case HTTP_UPDATE_FAILED:
         Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
         break;
-
       case HTTP_UPDATE_NO_UPDATES:
         Serial.println("HTTP_UPDATE_NO_UPDATES");
         break;
-
       case HTTP_UPDATE_OK:
         Serial.println("HTTP_UPDATE_OK");
         break;
     }
     Serial.println("actualizo el software");  
+  }else{
+    Serial.print("Update Firmware dont advance becuase deviceID empty -"+ String(deviceIdFinalValue)+"- end");
   }
-  Serial.println("DEVICEID INICIAL!!! "+ String(deviceIdFinalValue));
+
   if(String(deviceIdFinalValue).equals("empty") || String(deviceIdFinalValue).equals("")){
     contPrimerINgreso=1;
-    long randNumber= random(1000,9999);
-    String val="myUsuario-"+String(randNumber);
-    strncpy( clientIDrnd, val.c_str(), val.length());
+    std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
+    client->setFingerprint(fingerprint);
+    HTTPClient https;
+    if (https.begin(*client, "https://mqtt.coiaca.com:8099/useralarm/register")) {
+      https.addHeader("Content-Type", "application/json");
+      Serial.print("[HTTP] POST...\n");
+      String httpRequestData = "{\"devid\":\"empty\",\"mail\":\""+ (String)emailValue+"\",\"pass\":\""+(String)passwordFinalValue+"\",\"type\":\"DSC01\",\"vrf\":\"r5BewD1H+aofwJ0fvDZeRw==\"}";          
+      // Send HTTP POST request
+      int httpCode = https.POST(httpRequestData);
+      // httpCode will be negative on error
+      if (httpCode > 0) {
+        // HTTP header has been send and Server response header has been handled
+        Serial.printf("[HTTPS] POST... code: %d\n", httpCode);
 
-    Serial.println("Starting register Process: "+val);
-    String deviceConfigURLResp= "Deviceconfig/"+val+"/response";
-    mqttDeviceConfigResponseValue=String(deviceConfigURLResp).c_str();
-    String deviceConfigURLReq="Deviceconfig/"+val;
-    mqttDeviceConfigValue= String(deviceConfigURLReq).c_str();
-    needMqttConnect = true;
+        // file found at server
+        if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+          String payload = https.getString();
+          Serial.println(payload);
+          CompleteRegister(payload);
+        }
+      } else {
+        Serial.printf("[HTTPS] POST... failed, error: %s\n", https.errorToString(httpCode).c_str());
+      }
+      https.end();
+    } else {
+      Serial.printf("[HTTPS] Unable to connect\n");
+    }
+
   }else{
     Serial.println("Device Register: "+String(deviceIdFinalValue));
     needMqttConnect = true;
@@ -420,9 +440,9 @@ bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper){
   }
 
   //ID validation
-  int l = webRequestWrapper->arg(deviceIDFinalParam.getId()).length();
-  if (l < 10)
-  {
+//  int l = webRequestWrapper->arg(deviceIDFinalParam.getId()).length();
+//  if (l < 10)
+//  {
     Serial.println("Initial configuration of the Device");
   //  memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
   //  strncpy(deviceIdFinalValue, String("empty").c_str(), String("empty").length());
@@ -431,7 +451,7 @@ bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper){
   //          { httpUpdater.setup(&server, updatePath); },
   //          [](const char *userName, char *password)
   //          { httpUpdater.updateCredentials(userName, password); });
-  }
+// }
   return valid;
 }
 

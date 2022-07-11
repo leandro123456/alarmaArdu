@@ -1,22 +1,3 @@
-void PublicarConfiguracionInicial(){
-  if(mqttClient.connected()){
-    Serial.println("Publicar configuracion inicial");
-    String msgtext="{\"mail\":\""+ (String)emailValue + "\",\"pwd\":\"" + (String)passwordFinalValue + "\",\"NdvHATypDvid\":\"" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+"empty"+"\"}";
-    mqttClient.publish(mqttDeviceConfigValue.c_str(),msgtext.c_str() ,false); 
-    /// --------------- SerialDebug: ----------
-    Serial.println("Publishing Initial data to register...");
-    Serial.println("Message sent to initial register. Topic: " + (String)mqttDeviceConfigValue + "{\"mail\":\""+ (String)emailValue + "\",\"NdvHATypDvid\":\"" + (String)useHAmqttDiscoveryValue + "-" + (String)productType+"-"+"empty"+"\"}" );
-    // --------------- mqttDebug: ---------
-    if (atoi(enableMqttDebugValue) == 1) {
-      msgtext=String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttDeviceConfigValue + " Payload: {\"deviceId\":\"" + "empty" +"\"}";
-      mqttClient.publish(MqttDebugTopicValue, msgtext.c_str(), false);
-    }
-  }else{
-    // --------------- SerialDebug: ----------
-    Serial.println("FAIL: Data cound not be published because not connected to broker" );
-  }
-}
-
 void publicaEstados(){
   if(mqttClient.connected()){
     String msgtext="{\"deviceID\":\"" + String(deviceIdFinalValue) +"\",\"DSC\":" + dsc.keybusConnected + ",\"MQTT\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}";
@@ -34,7 +15,7 @@ void publicaEstados(){
       Serial.println("Active partition sended: "+String(activePartition)+ " to: "+ String(mqttActivePartitionTopicValue));
       SendHaConfiguration();
       hanosended=false;
-      mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"Start DSC init Partitions", false);
+      //mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"Start DSC init Partitions", false);
       if (dsc.keybusConnected) {
         for (byte partition = 0; partition < dscPartitions; partition++) {
           char partitionNumber[2];
@@ -68,16 +49,14 @@ void publicaEstados(){
             sendMonitoring(msgtext1,"disarmed",(String)"MONITORING: NORMAL Status published for partition " + partitionNumber);
           }
         }
-        mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"DSC init Partitions", false);
+        //mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"DSC init Partitions", false);
       }
-      else{
-        mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"DSC NO conected", false);
-      }
+      //else{
+      //  mqttClient.publish((String(mqttKeepAliveTopicValue)+"/dsc").c_str(),"DSC NO conected", false);
+      //}
     }
   } else {
-    //--------------- SerialDebug: ---------
     Serial.println("FAIL: Data cound not be published because not connected to broker" );
-    // --------------- mqttDebug: ---------
     if (atoi(enableMqttDebugValue) == 1) {
       String msgtext= String(deviceIdFinalValue) + " - FAIL: Data cound not be published because not connected to broker: " + mqttServerValue;
       mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), false);
