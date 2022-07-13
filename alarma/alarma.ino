@@ -167,8 +167,8 @@ IotWebConfTextParameter MqttDebugTopicParam = IotWebConfTextParameter("MQTT Debu
 static char remoteUpateFirmwarePVal[][NUMBER_LEN] = { "0", "1"};
 static char remoteUpateFirmwarePNam[][NUMBER_LEN] = { "No", "Yes"};
 IotWebConfParameterGroup group6 =  IotWebConfParameterGroup("group6", "Remote Update Firmware");
-IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Update Firmware Now", "RemoteUpdateFirmware", remoteUpateFirmware, NUMBER_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / NUMBER_LEN, NUMBER_LEN);
-IotWebConfTextParameter updateFirmwareValueParam = IotWebConfTextParameter("Update Firmware URL", "upateFirmware", updateFirmwareValue, STRING_LEN, "http://device.coiaca.com/fwupdate/BRDSC01_1_0_0i.bin",nullptr, "http://device.coiaca.com/fwupdate/BRDSC01_1_0_0i.bin");
+IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Update Firmware Now (need to have your device registered)", "RemoteUpdateFirmware", remoteUpateFirmware, NUMBER_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfTextParameter updateFirmwareValueParam = IotWebConfTextParameter("Update Firmware URL", "upateFirmware", updateFirmwareValue, STRING_LEN, "http://device.coiaca.com/fwupdate/BRDSC01_1_2_0i.bin",nullptr, "http://device.coiaca.com/fwupdate/BRDSC01_1_2_0i.bin");
 
 
 void setup() {
@@ -337,7 +337,19 @@ void wifiConnected(){
   Serial.println("DeviceId identified: " +String(deviceIdFinalValue));
 
   if (atoi(remoteUpateFirmware) == 1 && !String(deviceIdFinalValue).equals("")) {
-     for (uint8_t t = 4; t > 0; t--) {
+    if(String(updateFirmwareValue).endsWith("latest.bin")){
+      memset(updateFirmwareValue,0, sizeof updateFirmwareValue);
+      strncpy(updateFirmwareValue, String("http://device.coiaca.com/fwupdate/BRDSC01_1_2_0i.bin").c_str(), String("http://device.coiaca.com/fwupdate/BRDSC01_1_2_0i.bin").length());
+  
+      iotWebConf.setupUpdateServer(
+        [](const char *updatePath)
+        { httpUpdater.setup(&server, updatePath); },
+        [](const char *userName, char *password)
+        { httpUpdater.updateCredentials(userName, password); });
+      iotWebConf.saveConfig();
+    }
+
+    for (uint8_t t = 4; t > 0; t--) {
     Serial.printf("[SETUP] WAIT %d...\n", t);
     Serial.flush();
     delay(1000);
@@ -361,10 +373,7 @@ void wifiConnected(){
       case HTTP_UPDATE_OK:
         Serial.println("HTTP_UPDATE_OK");
         break;
-    }
-    Serial.println("actualizo el software");  
-  }else{
-    Serial.print("Update Firmware dont advance becuase deviceID empty -"+ String(deviceIdFinalValue)+"- end");
+    }  
   }
 
   if(String(deviceIdFinalValue).equals("empty") || String(deviceIdFinalValue).equals("")){
@@ -373,6 +382,7 @@ void wifiConnected(){
     client->setFingerprint(fingerprint);
     HTTPClient https;
     if (https.begin(*client, "https://mqtt.coiaca.com:8099/useralarm/register")) {
+      https.setTimeout(6000);
       https.addHeader("Content-Type", "application/json");
       Serial.print("[HTTP] POST...\n");
       String httpRequestData = "{\"devid\":\"empty\",\"mail\":\""+ (String)emailValue+"\",\"pass\":\""+(String)passwordFinalValue+"\",\"type\":\"DSC01\",\"vrf\":\"r5BewD1H+aofwJ0fvDZeRw==\"}";          
