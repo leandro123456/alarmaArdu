@@ -7,13 +7,13 @@
 
 unsigned int localPort = 8888;
 const char productType[] = "DSC01";
-const char thingName[] = "Coiaca-DSC01";  
+const char thingName[] = "Coiaca-DSC01-i-pass-12345678";  
 const char wifiInitialApPassword[] = "12345678"; 
 
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
-#define CONFIG_VERSION "DSC_v1.1.0"
+#define CONFIG_VERSION "DSC_v1.2.0"
 
 #define CONFIG_PIN 12
 #define STATUS_PIN 0   
@@ -142,7 +142,7 @@ IotWebConfTextParameter MqttDebugTopicParam = IotWebConfTextParameter("MQTT Debu
 static char remoteUpateFirmwarePVal[][NUMBER_LEN] = { "0", "1"};
 static char remoteUpateFirmwarePNam[][NUMBER_LEN] = { "No", "Yes"};
 IotWebConfParameterGroup group6 =  IotWebConfParameterGroup("group6", "Remote Update Firmware");
-IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Enable Remote Update Firmware", "RemoteUpdateFirmware", remoteUpateFirmware, NUMBER_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / NUMBER_LEN, NUMBER_LEN);
+IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Update Firmware Now (need to have your device registered)", "RemoteUpdateFirmware", remoteUpateFirmware, NUMBER_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / NUMBER_LEN, NUMBER_LEN);
 IotWebConfTextParameter updateFirmwareValueParam = IotWebConfTextParameter("Update Firmware URL", "upateFirmware", updateFirmwareValue, STRING_LEN, "http://device.coiaca.com/fwupdate/BRDSC01_latest.bin",nullptr, "http://device.coiaca.com/fwupdate/BRDSC01_latest.bin");
 
 const char CUSTOMHTML_SCRIPT_INNER[] PROGMEM = "document.addEventListener(\"DOMContentLoaded\",function(e){let t=document.querySelectorAll('input[type=\"password\"]');for(let e of t){let t=document.createElement(\"INPUT\");t.type=\"button\",t.value=\"??\",t.style.width=\"auto\",e.style.width=\"83%\",e.parentNode.insertBefore(t,e.nextSibling),t.onclick=function(){\"password\"===e.type?(e.type=\"text\",t.value=\"??\"):(e.type=\"password\",t.value=\"??\")}}var s=document.querySelectorAll('input[type=\"custom_select\"]');if(s.length)for(var o=0;o<s.length;++o){var n=s[o].value;for(var l in optionsList=s[o].getAttribute(\"data-options\").split(\"|\"),selectTag=['<select name=\"',s[o].name,'\" id=\"',s[o].id,'\">'],\"\"===n&&selectTag.push('<option value=\"\"></option>'),optionsList)selectTag.push('<option value=\"'),selectTag.push(l),selectTag.push('\"'),l==n&&selectTag.push(\" selected\"),selectTag.push(\">\"),selectTag.push(optionsList[l]),selectTag.push(\"</option>\");selectTag.push(\"</select>\");var a=s[o].parentNode,p=document.createElement(\"span\");p.innerHTML=selectTag.join(\"\"),a.removeChild(s[o]),a.appendChild(p)}});";
@@ -273,6 +273,19 @@ void wifiConnected(){
         { httpUpdater.updateCredentials(userName, password); });
       iotWebConf.saveConfig();
     }
+
+    if(String(updateFirmwareValue).endsWith("i.bin")){
+      memset(updateFirmwareValue,0, sizeof updateFirmwareValue);
+      strncpy(updateFirmwareValue, String("http://device.coiaca.com/fwupdate/BRDSC01_latest.bin").c_str(), String("http://device.coiaca.com/fwupdate/BRDSC01_latest.bin").length());
+  
+      iotWebConf.setupUpdateServer(
+        [](const char *updatePath)
+        { httpUpdater.setup(&server, updatePath); },
+        [](const char *userName, char *password)
+        { httpUpdater.updateCredentials(userName, password); });
+      iotWebConf.saveConfig();
+    }
+
 
   
     for (uint8_t t = 4; t > 0; t--) {
