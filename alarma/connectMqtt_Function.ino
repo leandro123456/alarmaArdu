@@ -69,10 +69,12 @@ boolean connectMqttOptions(){
     return result;
   }
   else{
-    Serial.println((String)"mqttClientID: " + String(mqttClientIDValue));
     Serial.println((String)"mqtt USER: " + String(mqttUserNameValue));
     Serial.println((String)"mqtt PASS: " + String(mqttUserPasswordValue));
-    result = mqttClient.connect(mqttClientIDValue,mqttUserNameValue, mqttUserPasswordValue,mqttStatusTopicValue,0,true,mqttLwtMessageValue);
+    String clientId = "DSC01Clt";
+    clientId += String(random(0xffff), HEX);
+    Serial.println((String)"mqttClientID: " + clientId.c_str());
+    result = mqttClient.connect(clientId.c_str(),mqttUserNameValue, mqttUserPasswordValue,mqttStatusTopicValue,0,true,mqttLwtMessageValue);
     return result;
   }
 }

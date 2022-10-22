@@ -12,13 +12,13 @@
 unsigned int localPort = 8888;
 const char productType[] = "DSC01"; 
 const char deviceName[] = "Coiaca-DSC01";  
-const char wifiInitialApPassword[] = "k4v7D43sB3RA5";//"12345678";//
+const char wifiInitialApPassword[] = "r5b9F40sT2WQ1";//"12345678";//
 const uint8_t fingerprint[20] = {0x77,0xB5,0xBD,0x3D,0xE9,0x8D,0x54,0x38,0xDF,0x62,0x1E,0xFA,0x2F,0x26,0xF9,0x3F,0x9C,0x27,0xB2,0xCF};
 //local { 0x52,0xC8,0x22,0x9F,0xCB,0xAD,0xB4,0xF9,0x21,0xF5,0x25,0x82,0x5B,0x49,0x11,0x87,0xAB,0x66,0x85,0x7E};
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
-#define CONFIG_VERSION "DSC_v1.2.0"
+#define CONFIG_VERSION "DSC_v1.3.0"
 
 #define CONFIG_PIN 12
 #define STATUS_PIN 0   
@@ -123,15 +123,15 @@ IotWebConfTextParameter defaultHAPrefixParam = IotWebConfTextParameter("Default 
 IotWebConfParameterGroup group5 =  IotWebConfParameterGroup("group5", "Alarm Configuration");
 IotWebConfTextParameter accessCodeParam = IotWebConfTextParameter("Access Code", "accessCode", accessCodeValue, NUMBER_LEN,"1234", "1..9999", "min='0' max='9999' step='1'");
 
-static char isSecureConectionVal[][NUMBER_LEN] = { "1", "0"};
-static char isSecureConectionNam[][NUMBER_LEN] = { "Yes", "No"};
+static char isSecureConectionVal[][NUMBER_LEN] = {"0","1"};
+static char isSecureConectionNam[][NUMBER_LEN] = {"No","Yes"};
 static char mqttRetVal[][NUMBER_LEN] = { "0", "1"};
 static char mqttRetNam[][NUMBER_LEN] = { "No", "Yes"};
 static char mqttQoSParamVal[][NUMBER_LEN] ={ "0", "1","2"};
 static char mqttQoSParamNam[][NUMBER_LEN] = { "0", "1","2"};  
 IotWebConfParameterGroup group2 =  IotWebConfParameterGroup("group2", "MQTT Config");
 IotWebConfTextParameter mqttServerParam = IotWebConfTextParameter("MQTT Server URL", "mqttServer", mqttServerValue, STRING_LEN, "mqtt.coiaca.com", "mqttURL", "mqtt.coiaca.com");
-IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port", "MQTTPort", mqttPortValue, NUMBER_LEN, "8883", "1..9999", "min='1' max='9999' step='1'");
+IotWebConfNumberParameter mqttPortParam = IotWebConfNumberParameter("MQTT server port", "MQTTPort", mqttPortValue, NUMBER_LEN, "1883", "1..9999", "min='1' max='9999' step='1'");
 IotWebConfSelectParameter isSecureConectionParam = IotWebConfSelectParameter("Is Secure Port?", "Is Secure Port", isSecureConectionValue, NUMBER_LEN, (char*)isSecureConectionVal, (char*)isSecureConectionNam, sizeof(isSecureConectionNam) / NUMBER_LEN, NUMBER_LEN);
 IotWebConfTextParameter mqttUserNameParam = IotWebConfTextParameter("MQTT user", "mqttUser", mqttUserNameValue, STRING_LEN, "mqttusr",  nullptr,"mqttusr");
 IotWebConfPasswordParameter mqttUserPasswordParam = IotWebConfPasswordParameter("MQTT password", "mqttPass", mqttUserPasswordValue, STRING_LEN, "mqttpwd", nullptr,"mqttpwd");
@@ -377,17 +377,23 @@ void wifiConnected(){
   }
 
   if(String(deviceIdFinalValue).equals("empty") || String(deviceIdFinalValue).equals("")){
+    Serial.println("START [HTTP] POST...");
     contPrimerINgreso=1;
-    std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
-    client->setFingerprint(fingerprint);
+    //std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
+    //client->setFingerprint(fingerprint);
+    WiFiClient client;
     HTTPClient https;
-    if (https.begin(*client, "https://mqtt.coiaca.com:8099/useralarm/register")) {
-      https.setTimeout(6000);
+    Serial.println("BEFORE IF [HTTP] POST...");
+    //if (https.begin(*client, "https://mqtt.coiaca.com:8099/useralarm/register")) {
+    if (https.begin(client, "http://mqtt.coiaca.com:8099/useralarm/register")) {
+      https.setTimeout(15000);
       https.addHeader("Content-Type", "application/json");
-      Serial.print("[HTTP] POST...\n");
+      Serial.println("[HTTP] POST...");
       String httpRequestData = "{\"devid\":\"empty\",\"mail\":\""+ (String)emailValue+"\",\"pass\":\""+(String)passwordFinalValue+"\",\"type\":\"DSC01\",\"vrf\":\"r5BewD1H+aofwJ0fvDZeRw==\"}";          
       // Send HTTP POST request
+      Serial.println("SENDING [HTTP unsecure] POST...");
       int httpCode = https.POST(httpRequestData);
+      Serial.println("SENT [HTTP] POST...");
       // httpCode will be negative on error
       if (httpCode > 0) {
         // HTTP header has been send and Server response header has been handled

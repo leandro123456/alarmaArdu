@@ -16,6 +16,7 @@ void CompleteRegister(String payload){
   
   String mqttUserObtenido = jsonBuffer["mqttusr"];
   String mqttPasswordObtenido = jsonBuffer["mqttpwd"];
+  String rootId = jsonBuffer["rootinfo"];
 
   //Configuraciones
   memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
@@ -28,38 +29,38 @@ void CompleteRegister(String payload){
   strncpy(mqttUserPasswordValue, String(mqttPasswordObtenido).c_str(), String(mqttPasswordObtenido).length());
 
   memset(mqttClientIDValue, 0, sizeof mqttClientIDValue);
-  strncpy(mqttClientIDValue, String(deviceIdObtenido+"CID").c_str(), String(deviceIdObtenido+"CID").length());
+  strncpy(mqttClientIDValue, String(rootId+"CID").c_str(), String(rootId+"CID").length());
 
   //Topicos
   memset(mqttStatusTopicValue, 0, sizeof mqttStatusTopicValue);
-  strncpy(mqttStatusTopicValue, String(deviceIdObtenido+"/Status").c_str(), String(deviceIdObtenido+"/Status").length());
+  strncpy(mqttStatusTopicValue, String(rootId+"/"+deviceIdObtenido+"/Status").c_str(), String(rootId+"/"+deviceIdObtenido+"/Status").length());
 
   memset(mqttPartitionTopicValue, 0, sizeof mqttPartitionTopicValue);
-  strncpy(mqttPartitionTopicValue, String(deviceIdObtenido +"/Partition").c_str(), String(deviceIdObtenido +"/Partition").length());
+  strncpy(mqttPartitionTopicValue, String(rootId+"/"+deviceIdObtenido +"/Partition").c_str(), String(rootId+"/"+deviceIdObtenido +"/Partition").length());
 
   memset(mqttActivePartitionTopicValue, 0, sizeof mqttActivePartitionTopicValue);
-  strncpy(mqttActivePartitionTopicValue, String(deviceIdObtenido +"/activePartition").c_str(), String(deviceIdObtenido +"/activePartition").length());
+  strncpy(mqttActivePartitionTopicValue, String(rootId+"/"+deviceIdObtenido +"/activePartition").c_str(), String(rootId+"/"+deviceIdObtenido +"/activePartition").length());
 
   memset(mqttZoneTopicValue, 0, sizeof mqttZoneTopicValue);
-  strncpy(mqttZoneTopicValue, String(deviceIdObtenido +"/Zone").c_str(), String(deviceIdObtenido +"/Zone").length());
+  strncpy(mqttZoneTopicValue, String(rootId+"/"+deviceIdObtenido +"/Zone").c_str(), String(rootId+"/"+deviceIdObtenido +"/Zone").length());
 
   memset(mqttFireTopicValue, 0, sizeof mqttFireTopicValue);
-  strncpy(mqttFireTopicValue, String(deviceIdObtenido +"/Fire").c_str(), String(deviceIdObtenido +"/Fire").length());
+  strncpy(mqttFireTopicValue, String(rootId+"/"+deviceIdObtenido +"/Fire").c_str(), String(rootId+"/"+deviceIdObtenido +"/Fire").length());
 
   memset(mqttTroubleTopicValue, 0, sizeof mqttTroubleTopicValue);
-  strncpy(mqttTroubleTopicValue, String(deviceIdObtenido +"/Trouble").c_str(), String(deviceIdObtenido +"/Trouble").length());
+  strncpy(mqttTroubleTopicValue, String(rootId+"/"+deviceIdObtenido +"/Trouble").c_str(), String(rootId+"/"+deviceIdObtenido +"/Trouble").length());
 
   memset(mqttCommandTopicValue, 0, sizeof mqttCommandTopicValue);
-  strncpy(mqttCommandTopicValue, String(deviceIdObtenido +"/cmd").c_str(), String(deviceIdObtenido +"/cmd").length());
+  strncpy(mqttCommandTopicValue, String(rootId+"/"+deviceIdObtenido +"/cmd").c_str(), String(rootId+"/"+deviceIdObtenido +"/cmd").length());
 
   memset(mqttKeepAliveTopicValue, 0, sizeof mqttKeepAliveTopicValue);
-  strncpy(mqttKeepAliveTopicValue, String(deviceIdObtenido +"/keepAlive").c_str(), String(deviceIdObtenido +"/keepAlive").length());
+  strncpy(mqttKeepAliveTopicValue, String(rootId+"/"+deviceIdObtenido +"/keepAlive").c_str(), String(rootId+"/"+deviceIdObtenido +"/keepAlive").length());
 
   memset(monitoringTopicValue, 0, sizeof monitoringTopicValue);
-  strncpy(monitoringTopicValue, String(deviceIdObtenido+"/MNTR").c_str(), String(deviceIdObtenido+"/MNTR").length());
+  strncpy(monitoringTopicValue, String(rootId+"/"+deviceIdObtenido+"/MNTR").c_str(), String(rootId+"/"+deviceIdObtenido+"/MNTR").length());
 
   memset(MqttDebugTopicValue, 0, sizeof MqttDebugTopicValue);
-  strncpy(MqttDebugTopicValue, String("RMgmt/"+deviceIdObtenido+"/debug").c_str(), String("RMgmt/"+deviceIdObtenido+"/debug").length());
+  strncpy(MqttDebugTopicValue, String(rootId+"/"+deviceIdObtenido+"/deb").c_str(), String(rootId+"/"+deviceIdObtenido+"/deb").length());
 
 
   iotWebConf.setupUpdateServer(
