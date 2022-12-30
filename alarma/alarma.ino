@@ -1,11 +1,11 @@
-#include <ESP8266WiFi.h>
+//#include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <IotWebConf.h>
 #include <IotWebConfUsing.h>
 #include <ArduinoJson.h>
 #include <dscKeybusInterface.h>
 #include <ESP8266HTTPUpdateServer.h>
-#include <ESP8266HTTPClient.h>
+//#include <ESP8266HTTPClient.h>
 #include <ESP8266httpUpdate.h>
 #include <WiFiClientSecureBearSSL.h>
 
@@ -18,7 +18,7 @@ const uint8_t fingerprint[20] = {0x77,0xB5,0xBD,0x3D,0xE9,0x8D,0x54,0x38,0xDF,0x
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
-#define CONFIG_VERSION "DSC_v1.2.0"
+#define CONFIG_VERSION "DSC_v1.2.1"
 
 #define CONFIG_PIN 12
 #define STATUS_PIN 0   
@@ -254,7 +254,6 @@ void loop() {
   iotWebConf.doLoop();
   mqttClient.loop();
   dsc.loop();
-  //doDSC();
 
   if (needMqttConnect){
     if (connectMqtt()){
