@@ -2,13 +2,7 @@ void publicaEstados(){
   if(mqttClient.connected()){
     String msgtext="{\"deviceID\":\"" + String(deviceIdFinalValue) + ",\"MQTT\":" + mqttClient.connected() + ",\"dBm\":" + String(WiFi.RSSI()) + "}";
     mqttClient.publish(mqttKeepAliveTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue));  
-    /// --------------- SerialDebug: ----------
     Serial.println("Message sent. Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) + "\"}" );
-    // --------------- mqttDebug: ---------
-    if (atoi(enableMqttDebugValue) == 1) {
-      msgtext= String(deviceIdFinalValue) + " - Data published on: " + (String)mqttServerValue + " Topic: " + (String)mqttKeepAliveTopicValue + " Payload: {\"deviceId\":\"" + String(deviceIdFinalValue) +"\"}";
-      mqttClient.publish(MqttDebugTopicValue,msgtext.c_str() , false);
-    }
 
     if(hanosended){
       mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition).c_str(), true);             
@@ -33,7 +27,7 @@ void publicaEstados(){
             else if (dsc.armedStay[partition]) 
               mqttClient.publish(publishTopic, "armed_home", true);
             //Monitoring
-            if (atoi(enableMonitoringValue) > 1) {
+            if (false) {
               msgtext1=(String)monitoringTopicValue + "/Partition" + partitionNumber;
               if (dsc.armedAway[partition]){
                 sendMonitoring(msgtext1,"armed_away",String(deviceIdFinalValue) +" MONITORING: ARMED_AWAY Status published for partition " + partitionNumber);
@@ -53,10 +47,6 @@ void publicaEstados(){
     }
   } else {
     Serial.println("FAIL: Data cound not be published because not connected to broker" );
-    if (atoi(enableMqttDebugValue) == 1) {
-      String msgtext= String(deviceIdFinalValue) + " - FAIL: Data cound not be published because not connected to broker: " + mqttServerValue;
-      mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), false);
-    }
   }
 }
 
@@ -167,15 +157,12 @@ void publishMessage(const char* sourceTopic, byte partition) {
 void SendHaConfiguration(){
 
   if(mqttClient.connected()){
-  Serial.println("HomeAssistant start configuration");
-  //alarm-control-panel
   char HomeAssitanConfTopic[STRING_LEN];
   String deviceID=String(deviceIdFinalValue);
   String HomeAssitanValue= String(defaultHAPrefixValue)+"/alarm_control_panel/"+deviceID+"/config";
   memset(HomeAssitanConfTopic, 0, sizeof HomeAssitanConfTopic);
   strncpy(HomeAssitanConfTopic, HomeAssitanValue.c_str(), HomeAssitanValue.length());
   Serial.println("HomeAssistant TOPICO: "+ String(HomeAssitanConfTopic));
-  //general configuration alarm
   DynamicJsonDocument obj(500);
   char buffer[500];
   obj["~"] = deviceID;

@@ -1,24 +1,22 @@
-//#include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <IotWebConf.h>
 #include <IotWebConfUsing.h>
 #include <ArduinoJson.h>
 #include <dscKeybusInterface.h>
 #include <ESP8266HTTPUpdateServer.h>
-//#include <ESP8266HTTPClient.h>
 #include <ESP8266httpUpdate.h>
 #include <WiFiClientSecureBearSSL.h>
 
 unsigned int localPort = 8888;
 const char productType[] = "DSC01"; 
 const char deviceName[] = "Coiaca-DSC01";  
-const char wifiInitialApPassword[] = "k4v7D43sB3RA5";//"12345678";//
+const char wifiInitialApPassword[] = "r5B9F4FT2WQ1";//"12345678";//
 const uint8_t fingerprint[20] = {0x77,0xB5,0xBD,0x3D,0xE9,0x8D,0x54,0x38,0xDF,0x62,0x1E,0xFA,0x2F,0x26,0xF9,0x3F,0x9C,0x27,0xB2,0xCF};
 //local { 0x52,0xC8,0x22,0x9F,0xCB,0xAD,0xB4,0xF9,0x21,0xF5,0x25,0x82,0x5B,0x49,0x11,0x87,0xAB,0x66,0x85,0x7E};
 
 #define STRING_LEN 64
 #define NUMBER_LEN 8
-#define CONFIG_VERSION "DSC_v1.2.1"
+#define CONFIG_VERSION "DSC_v1.3.0"
 
 #define CONFIG_PIN 12
 #define STATUS_PIN 0   
@@ -27,9 +25,7 @@ const uint8_t fingerprint[20] = {0x77,0xB5,0xBD,0x3D,0xE9,0x8D,0x54,0x38,0xDF,0x
 #define dscClockPin 5  // esp8266: D1, D2, D8 (GPIO 5, 4, 15)
 #define dscReadPin 4   // esp8266: D1, D2, D8 (GPIO 5, 4, 15)
 #define dscWritePin 15  // esp8266: D1, D2, D8 (GPIO 5, 4, 15)
-//#define dscPC16Pin 13 // DSC Classic Series only:D7 (GPIO 13)
 dscKeybusInterface dsc(dscClockPin, dscReadPin, dscWritePin);
-//dscClassicInterface dsc(dscClockPin, dscReadPin, dscPC16Pin, dscWritePin, accessCodeValue);
 
 // Servicios
 DNSServer dnsServer;
@@ -93,10 +89,7 @@ char mqttKeepAliveTopicValue[STRING_LEN];
 char updateIntervalValue[NUMBER_LEN];
 char mqttRetainValue[NUMBER_LEN];
 char mqttQoSValue[NUMBER_LEN];
-char enableMonitoringValue[NUMBER_LEN];
 char monitoringTopicValue[STRING_LEN];
-char enableMqttDebugValue[NUMBER_LEN];
-char MqttDebugTopicValue[STRING_LEN];
 char isSecureConectionValue[NUMBER_LEN];
 char remoteUpateFirmware[NUMBER_LEN];
 char updateFirmwareValue[STRING_LEN];
@@ -153,16 +146,7 @@ IotWebConfTextParameter mqttTroubleTopicParam = IotWebConfTextParameter("Trouble
 IotWebConfTextParameter mqttCommandTopicParam = IotWebConfTextParameter("Commands Topic", "mqttCommandTopic", mqttCommandTopicValue, STRING_LEN, nullptr,"commands", nullptr);
 IotWebConfTextParameter mqttKeepAliveTopicParam = IotWebConfTextParameter("Keep Alive Topic", "mqttKeepAliveTopic", mqttKeepAliveTopicValue, STRING_LEN,nullptr, "keepAlive", nullptr);
 IotWebConfNumberParameter updateIntervalParam = IotWebConfNumberParameter("Keep Alive interval (seconds)", "updateInterval", updateIntervalValue, NUMBER_LEN, "30", "1..100", "min='1' max='100' step='1'");
-
-static char enableMonitoringPVal[][STRING_LEN] = { "0", "1","2","3"};
-static char enableMonitoringPNam[][STRING_LEN] = {"Disabled","Basic","Armed","All"};
-static char enableMqttDebugPVal[][NUMBER_LEN] = { "0", "1"};
-static char enableMqttDebugPNam[][NUMBER_LEN] = { "No", "Yes"};
-IotWebConfParameterGroup group4 =  IotWebConfParameterGroup("group4", "Monitoring Configuration");
-IotWebConfSelectParameter enableMonitoringParam = IotWebConfSelectParameter("Enable Monitoring", "enableMonitoring", enableMonitoringValue, STRING_LEN, (char*)enableMonitoringPVal, (char*)enableMonitoringPNam, sizeof(enableMonitoringPVal) / STRING_LEN, STRING_LEN);
 IotWebConfTextParameter monitoringTopicParam = IotWebConfTextParameter("Monitoring Topic Prefix", "monitoringTopic", monitoringTopicValue, STRING_LEN,nullptr, "MNTR", nullptr);
-IotWebConfSelectParameter enableMqttDebugParam = IotWebConfSelectParameter("Enable MQTT Debug", "enableMqttDebug", enableMqttDebugValue, NUMBER_LEN,(char*)enableMqttDebugPVal, (char*)enableMqttDebugPNam, sizeof(enableMqttDebugPVal) / NUMBER_LEN, NUMBER_LEN);
-IotWebConfTextParameter MqttDebugTopicParam = IotWebConfTextParameter("MQTT Debug Topic", "MqttDebugTopic", MqttDebugTopicValue, STRING_LEN, nullptr,"RMgmt", nullptr);
 
 static char remoteUpateFirmwarePVal[][NUMBER_LEN] = { "0", "1"};
 static char remoteUpateFirmwarePNam[][NUMBER_LEN] = { "No", "Yes"};
@@ -206,10 +190,7 @@ void setup() {
   group3.addItem(&mqttCommandTopicParam);
   group3.addItem(&mqttKeepAliveTopicParam);
   group3.addItem(&updateIntervalParam);
-  group4.addItem(&enableMonitoringParam);
-  group4.addItem(&monitoringTopicParam);
-  group4.addItem(&enableMqttDebugParam);
-  group4.addItem(&MqttDebugTopicParam);
+
   group6.addItem(&remoteUpateFirmwareParam);
   group6.addItem(&updateFirmwareValueParam);
 
@@ -220,9 +201,9 @@ void setup() {
   iotWebConf.addParameterGroup(&group5);
   iotWebConf.addParameterGroup(&group2);
   iotWebConf.addParameterGroup(&group3);
-  iotWebConf.addParameterGroup(&group4);
   iotWebConf.addParameterGroup(&group6);
   iotWebConf.addHiddenParameter(&deviceIDFinalParam);
+  iotWebConf.addHiddenParameter(&monitoringTopicParam);
   iotWebConf.setFormValidator(&formValidator);
   iotWebConf.setWifiConnectionCallback(&wifiConnected);
   iotWebConf.setConfigSavedCallback(&configSaved);
@@ -234,8 +215,6 @@ void setup() {
 
   if (atoi(isSecureConectionValue) != 1) {
       Serial.println("Conection insecure");
-      Serial.println("mqttServerValue: " + (String) mqttServerValue);
-      Serial.println("mqttPortValue: " + (String) mqttPortValue);
       mqttClient.setServer(mqttServerValue, atoi(mqttPortValue));
       mqttClient.setClient(net);
       mqttClient.setCallback(mqttMessageReceived);
@@ -263,31 +242,19 @@ void loop() {
   else{
     if ((iotWebConf.getState() == iotwebconf::OnLine) && (!mqttClient.connected())){
       Serial.println("MQTT reconnect");
-      if (atoi(enableMqttDebugValue) == 1) {
-        String msgtext=String(deviceIdFinalValue) + " - MQTT reconnect";
-        mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(),(bool) atoi(mqttRetainValue));
-      }
       connectMqtt();
     }
   }
   if (needReset){
     Serial.println("Rebooting after 1 second.");
-    if (atoi(enableMqttDebugValue) == 1) {
-      String msgtext=String(deviceIdFinalValue) + " - Rebooting after 1 second..." ;
-      mqttClient.publish(MqttDebugTopicValue,msgtext.c_str() , (bool) atoi(mqttRetainValue));}
-
-     iotWebConf.delay(1000);
+    iotWebConf.delay(1000);
     ESP.restart();
   }
   if(correctPassword){
     if(!String(deviceIdFinalValue).equals("empty") && !String(deviceIdFinalValue).equals("")){
       if (iotWebConf.getState() == iotwebconf::OnLine) {
         if ( atoi(updateIntervalValue) > 0 && millis() - lastPublish > (atoi(updateIntervalValue) * 1000) ) { 
-          Serial.println("Keep Alive interval elapsed. Automatically publishing...");
-      if (atoi(enableMqttDebugValue) == 1) {
-        String msgtext=String(deviceIdFinalValue) + " - Keep Alive interval elapsed. Automatically publishing...";
-        mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
-      }
+          Serial.println("Keep Alive interval elapsed. Automatically publishing...");    
           publicaEstados();
           lastPublish = millis();
         }
@@ -333,8 +300,6 @@ void handleRoot(){
 }
 
 void wifiConnected(){
-  Serial.println("DeviceId identified: " +String(deviceIdFinalValue));
-
   if (atoi(remoteUpateFirmware) == 1 && !String(deviceIdFinalValue).equals("")) {
     if(String(updateFirmwareValue).endsWith("latest.bin")){
       memset(updateFirmwareValue,0, sizeof updateFirmwareValue);
@@ -384,15 +349,9 @@ void wifiConnected(){
       https.setTimeout(6000);
       https.addHeader("Content-Type", "application/json");
       Serial.print("[HTTP] POST...\n");
-      String httpRequestData = "{\"devid\":\"empty\",\"mail\":\""+ (String)emailValue+"\",\"pass\":\""+(String)passwordFinalValue+"\",\"type\":\"DSC01\",\"vrf\":\"r5BewD1H+aofwJ0fvDZeRw==\"}";          
-      // Send HTTP POST request
+      String httpRequestData = "{\"devid\":\"empty\",\"mail\":\""+ (String)emailValue+"\",\"pass\":\""+(String)passwordFinalValue+"\",\"type\":\"DSC01\",\"vrf\":\"r5BewD1H+aofwJ0fvDZeRw==\"}";
       int httpCode = https.POST(httpRequestData);
-      // httpCode will be negative on error
       if (httpCode > 0) {
-        // HTTP header has been send and Server response header has been handled
-        Serial.printf("[HTTPS] POST... code: %d\n", httpCode);
-
-        // file found at server
         if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
           String payload = https.getString();
           Serial.println(payload);
@@ -412,19 +371,13 @@ void wifiConnected(){
     dsc.begin();
     DSCBegined = true;
     activePartition = dsc.writePartition;
-    //mqttClient.publish(mqttActivePartitionTopicValue, String(activePartition), true, atoi(mqttQoSValue)); 
-    //Serial.println("Active partition sended: "+String(activePartition)+ " to: "+ String(mqttActivePartitionTopicValue));
     hanosended=true;
   }
 
 }
 
 void configSaved(){
-  Serial.println("Configuration updated.");
-  if (atoi(enableMqttDebugValue) == 1) {
-    String msgtext=String(deviceIdFinalValue) + " - Configuration updated.";
-    mqttClient.publish(MqttDebugTopicValue, msgtext.c_str(), (bool) atoi(mqttRetainValue));
-  }
+  Serial.println(String(deviceIdFinalValue) +  "Configuration updated.");
   needReset = true;
 }
 
@@ -447,20 +400,7 @@ bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper){
     passwordUserConfirmParam.errorMessage = "The password is not the same";
     valid = false;
   }
-
-  //ID validation
-//  int l = webRequestWrapper->arg(deviceIDFinalParam.getId()).length();
-//  if (l < 10)
-//  {
-    Serial.println("Initial configuration of the Device");
-  //  memset(deviceIdFinalValue, 0, sizeof deviceIdFinalValue);
-  //  strncpy(deviceIdFinalValue, String("empty").c_str(), String("empty").length());
-  //  iotWebConf.setupUpdateServer(
-  //          [](const char *updatePath)
-  //          { httpUpdater.setup(&server, updatePath); },
-  //          [](const char *userName, char *password)
-  //          { httpUpdater.updateCredentials(userName, password); });
-// }
+  Serial.println("Initial configuration of the Device");
   return valid;
 }
 

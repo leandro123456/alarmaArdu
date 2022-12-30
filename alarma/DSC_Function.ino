@@ -34,18 +34,12 @@ void doDSC(){
       else 
         mqttClient.publish(mqttTroubleTopicValue, "0", (bool) atoi(mqttRetainValue));
       
-      if (atoi(enableMonitoringValue) > 1) {
+      if (false) {
         String troubletopic=(String) monitoringTopicValue + "/Trouble";
         if (dsc.trouble)
           mqttClient.publish(troubletopic.c_str(), "1", true);
         else
           mqttClient.publish(troubletopic.c_str(), "0", true);
-
-        Serial.println("MONITORING: online Status published");
-        if (atoi(enableMqttDebugValue) == 1) {
-          String msgtext= String(deviceIdFinalValue) + " MONITORING: Trouble status published";
-          mqttClient.publish(MqttDebugTopicValue,msgtext.c_str(), (bool) atoi(mqttRetainValue));
-        }
       }
     }
   
@@ -60,9 +54,8 @@ void doDSC(){
       char publishTopic[strlen(mqttPartitionTopicValue) + 2];
       appendPartition(mqttPartitionTopicValue, partition, publishTopic);  // Appends the mqttPartitionTopic with the partition number
 
-      // Publishes the partition status message
+      // Publishes the partition status message USING MNTR
       publishMessage(((String)monitoringTopicValue +"/DetailPartition").c_str(), partition);
-      //publishMessage(((String)mqttPartitionTopicValue).c_str(), partition);
 
       // Publishes armed/disarmed status
       if (dsc.armedChanged[partition]) {
@@ -83,7 +76,7 @@ void doDSC(){
             mqttClient.publish(publishTopic, "armed_home", true);
         
           //Monitoring
-          if (atoi(enableMonitoringValue) > 1) {
+          if (false) {
             msgtext1=(String)monitoringTopicValue + "/Partition" + partitionNumber;
             if (dsc.armedAway[partition]){
               sendMonitoring(msgtext1,"armed_away",String(deviceIdFinalValue) +" MONITORING: ARMED_AWAY Status published for partition " + partitionNumber);
@@ -111,7 +104,7 @@ void doDSC(){
 
         //Monitoring
         String topicoDeMensaje=(String)monitoringTopicValue + "/Partition" + partitionNumber;
-        if (atoi(enableMonitoringValue) >1) {
+        if (false) {
           if (dsc.exitDelay[partition]){
             sendMonitoring(topicoDeMensaje,"pending",String(deviceIdFinalValue) + " MONITORING: PENDING status published for partition " + partitionNumber);
           }
@@ -176,14 +169,14 @@ void doDSC(){
             if (bitRead(dsc.openZones[zoneGroup], zoneBit)) {
                 mqttClient.publish(zonePublishTopic, "1", (bool) atoi(mqttRetainValue));            // Zone open
               //Monitoring
-              if (atoi(enableMonitoringValue) == 3) {
+              if (false) { //este era en maximo nivel de monitoreo
                 sendMonitoring(topicval,"1",String(deviceIdFinalValue) + " MONITORING: ACTIVE status published for zone " + zone);
               }                
             }
             else {
               mqttClient.publish(zonePublishTopic, "0", (bool) atoi(mqttRetainValue));         // Zone closed
               //Monitoring
-              if (atoi(enableMonitoringValue) == 3) {
+              if (false) { // este era en maximo nivel de monitoreo
                 sendMonitoring(topicval,"0",String(deviceIdFinalValue) + " MONITORING: INACTIVE status published for zone " + zone);
               }
             }
@@ -195,24 +188,7 @@ void doDSC(){
 }
 
 void sendMonitoring(String topicoDeMensaje, String mensaje, String mensajeDebug){
-
-  if (atoi(enableMonitoringValue) > 1) {
-    mqttClient.publish(topicoDeMensaje.c_str(), mensaje.c_str(), true); // Publish as a retained message
-    //--------------- SerialDebug: --------- 
-    Serial.println(mensajeDebug);
-    // --------------- mqttDebug: --------- 
-    if (atoi(enableMqttDebugValue) == 1) {
-      mqttClient.publish(MqttDebugTopicValue,mensajeDebug.c_str() , (bool) atoi(mqttRetainValue));
-    }
-  }
-  if (atoi(enableMonitoringValue) == 1) {
-    mqttClient.publish(topicoDeMensaje.c_str(), "normal", true); // Publish as a retained message
-    //--------------- SerialDebug: --------- 
-    Serial.println(mensajeDebug);
-    // --------------- mqttDebug: --------- 
-    if (atoi(enableMqttDebugValue) == 1) 
-      mqttClient.publish(MqttDebugTopicValue,mensajeDebug.c_str(), (bool) atoi(mqttRetainValue));
-  }
+  Serial.println("Topic "+ topicoDeMensaje+ " Message: "+ mensaje + " messageDebug: "+ mensajeDebug);
 }
 
 void appendPartition(const char* sourceTopic, byte sourceNumber, char* publishTopic) {
