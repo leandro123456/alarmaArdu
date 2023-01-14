@@ -152,7 +152,7 @@ static char remoteUpateFirmwarePVal[][NUMBER_LEN] = { "0", "1"};
 static char remoteUpateFirmwarePNam[][NUMBER_LEN] = { "No", "Yes"};
 IotWebConfParameterGroup group6 =  IotWebConfParameterGroup("group6", "Remote Update Firmware");
 IotWebConfSelectParameter remoteUpateFirmwareParam = IotWebConfSelectParameter("Update Firmware Now (need to have your device registered)", "RemoteUpdateFirmware", remoteUpateFirmware, NUMBER_LEN,(char*)remoteUpateFirmwarePVal, (char*)remoteUpateFirmwarePNam, sizeof(remoteUpateFirmwarePVal) / NUMBER_LEN, NUMBER_LEN);
-IotWebConfTextParameter updateFirmwareValueParam = IotWebConfTextParameter("Update Firmware URL", "upateFirmware", updateFirmwareValue, STRING_LEN, "http://device.coiaca.com/fwupdate/BRDSC01_1_2_0i.bin",nullptr, "http://device.coiaca.com/fwupdate/BRDSC01_1_2_0i.bin");
+IotWebConfTextParameter updateFirmwareValueParam = IotWebConfTextParameter("Update Firmware URL", "upateFirmware", updateFirmwareValue, STRING_LEN, "http://device.coiaca.com/fwupdate/BRDSC01_1_3_0i.bin",nullptr, "http://device.coiaca.com/fwupdate/BRDSC01_1_3_0i.bin");
 
 
 void setup() {
@@ -303,7 +303,7 @@ void wifiConnected(){
   if (atoi(remoteUpateFirmware) == 1 && !String(deviceIdFinalValue).equals("")) {
     if(String(updateFirmwareValue).endsWith("latest.bin")){
       memset(updateFirmwareValue,0, sizeof updateFirmwareValue);
-      strncpy(updateFirmwareValue, String("http://device.coiaca.com/fwupdate/BRDSC01_1_2_0i.bin").c_str(), String("http://device.coiaca.com/fwupdate/BRDSC01_1_2_0i.bin").length());
+      strncpy(updateFirmwareValue, String("http://device.coiaca.com/fwupdate/BRDSC01_1_3_0i.bin").c_str(), String("http://device.coiaca.com/fwupdate/BRDSC01_1_3_0i.bin").length());
   
       iotWebConf.setupUpdateServer(
         [](const char *updatePath)
